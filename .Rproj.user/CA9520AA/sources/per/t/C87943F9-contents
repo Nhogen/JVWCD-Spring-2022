@@ -1,0 +1,108 @@
+---
+title: "EDA"
+author: "JVWCD Capstone Group"
+date: "1/23/2022"
+output: 
+  html_document:
+    highlight: breezedark
+    number_sections: yes
+    toc: yes
+    fig_width: 15
+    fig_height: 10
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Read Data
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(chron)
+library(knitr)
+
+#read in data. Change names to be more readable and make hourly demand numeric
+sd <- read.csv("2_year_system_demand.csv")%>%
+  rename('hourly_demand' = 'Hourly.Demand..cfs.',
+         'date_time' = 'Read.Date.Time')%>%
+  mutate(hourly_demand = as.numeric(hourly_demand),
+         hourly_demand = ifelse(is.na(hourly_demand),0,hourly_demand)) #What do we do with NA's???
+
+#Make Date and Time match a consistent format with the Weather Data
+sd2 <- as.data.frame(str_split_fixed(sd$date_time, " ", 3))%>%
+  rename(date = V1, time = V2, am_or_pm = V3)%>%
+  mutate(datetime_str = paste(date, time, am_or_pm),
+         datetime = as.POSIXct(strptime(datetime_str, format = "%m/%d/%y %I:%M %p")),
+         datetime_military = strftime(datetime, format = "%m/%d/%Y %H:%M")) %>%
+  select(datetime,datetime_military)
+sd3 <-as.data.frame(str_split_fixed(sd2$datetime_military, " ", 2))%>%
+  rename(date = V1, time = V2)
+sd4 <-as.data.frame(str_split_fixed(sd3$date, "/", 3))%>%
+  rename(CalendarMonth = V1,  CalendarDay = V2, CalendarYear = V3)
+#Throw it all together
+sd <- cbind(sd,sd2,sd3,sd4)%>%
+  select(-date_time)
+#Get rid of temp dfs
+remove(sd2,sd3,sd4)
+
+#The names and dates in this table do not need much conversion
+wa <- read.csv("weather_sl_airport.csv")
+  
+  
+
+sp <- read.csv("system_demand_by_point_type.csv")%>%
+  rename('date_time' = 'Read.Date.Time',
+         'well_flow_cfs' = 'Well.Flow..cfs.',
+         'purchased_flow_cfs' = 'Purchased.Flow..cfs.',
+         'transported_flow_cfs' = 'Transported.Flow..cfs.',
+         'treated_flow_cfs' = 'Treated.Flow..cfs.',
+         'injected_flow_cfs' = 'Injected.Flow..cfs.',
+         'reservoir_trend_cfs' = 'Reservoir.Trend..cfs.',)
+#Make Date and Time match a consistant format with the Weather Data
+sp2 <- as.data.frame(str_split_fixed(sp$date_time, " ", 3))%>%
+  rename(date = V1, time = V2, am_or_pm = V3)%>%
+  mutate(datetime_str = paste(date, time, am_or_pm),
+         datetime = as.POSIXct(strptime(datetime_str, format = "%m/%d/%y %I:%M %p")),
+         datetime_military = strftime(datetime, format = "%m/%d/%Y %H:%M")) %>%
+  select(datetime,datetime_military)
+sp3 <-as.data.frame(str_split_fixed(sp2$datetime_military, " ", 2))%>%
+  rename(date = V1, time = V2)
+sp4 <-as.data.frame(str_split_fixed(sp3$date, "/", 3))%>%
+  rename(CalendarMonth = V1,  CalendarDay = V2, CalendarYear = V3)
+#Throw it all together
+sp <- cbind(sp,sp2,sp3,sp4)%>%
+  select(-date_time)
+#Get rid of temp dfs
+remove(sp2,sp3,sp4)
+```
+> Something important to note is that the weather data is daily and demand data is hourly so we should ask if they want to change to hourly weather data or as how we want to agregate daily demand so we can match the grain for our model.
+
+# 2 year system demand
+
+```{r}
+glimpse(sd)
+summary(sd)
+```
+
+# System Demand By Point Type
+
+```{r}
+glimpse(sp)
+summary(sp)
+```
+
+# Weather Data from Salt Lake Airport
+
+```{r}
+glimpse(wa)
+summary(wa)
+```
+
+```{r}
+
+
+```
