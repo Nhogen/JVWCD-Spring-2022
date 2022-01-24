@@ -18,3 +18,12 @@
 ***system_demand_by_point_type.csv*** is the system demand by point sheet in CSV format from the System Demand and Weather Data 2021.xlsx file.
 ***weather_sl_airport.csv*** is the weather data that was in the System Demand and Weather Data 2021.xlsx file.
 
+## Notes
+
++ (From Zach) The first thing I did in the rmd file was to get the dates in a consistent format. I figured wed want the same format to be able to look at the same day or hour between the data frames.
+
+## Questions
+
++ There is a NULL value in the 2 year system demand table. What do we do with NULL's?
++ The grain for weather data is daily. Do we want the model output to be daily or hourly?
++ If we want the output to be daily how should we agregate the demand?
