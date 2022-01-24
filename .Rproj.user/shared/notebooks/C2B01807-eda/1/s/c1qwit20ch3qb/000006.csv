@@ -1,0 +1,6 @@
+"0","library(tidyverse)"
+"2","Error: package or namespace load failed for ‘tidyverse’:
+ .onLoad failed in loadNamespace() for 'pillar', details:
+  call: list2(...)
+  error: cannot coerce type 'char' to vector of type 'character'
+"
