@@ -11,11 +11,15 @@
 
 ### XLSX Files
 ***System_Demand_and_Weather_Data.xlsx*** is the incomplete dataset with not all of 2021.
+
 ***System Demand and Weather Data 2021.xlsx*** is the latest dataset from Clifton with all of 2021 data. Looks like it has 2020 and 2021
 
 ### CSV Files
+
 ***2_year_system_demand.csv*** is the two year system demand sheet in CSV format from the System Demand and Weather Data 2021.xlsx file.
+
 ***system_demand_by_point_type.csv*** is the system demand by point sheet in CSV format from the System Demand and Weather Data 2021.xlsx file.
+
 ***weather_sl_airport.csv*** is the weather data that was in the System Demand and Weather Data 2021.xlsx file.
 
 ## Notes
