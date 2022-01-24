@@ -1,4 +1,4 @@
-# JVWCD-Spring-2022
+# JVWCD Spring 2022
 
 ## Explanation of Files
 
