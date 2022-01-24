@@ -1,13 +1,13 @@
 # JVWCD-Spring-2022
 
-## Explination of Files
+## Explanation of Files
 
 ### R Files
 
 ***JVWCD-Spring-2022.Rproj***
 > If you open this and then open the rmd file you should be able to work from R studio and access the csv or xlsx files.
 
-***eda.Rmd*** is the code for our EDA assignment. We can each create a branch and each have our own version of this or we can take turns pushing an pulling and workin on specific parts.
+***eda.Rmd*** is the code for our EDA assignment. We can each create a branch and each have our own version of this or we can take turns pushing and pulling and working on specific parts.
 
 ### XLSX Files
 ***System_Demand_and_Weather_Data.xlsx*** is the incomplete dataset with not all of 2021.
@@ -24,7 +24,7 @@
 
 ## Notes
 
-+ (From Zach) The first thing I did in the rmd file was to get the dates in a consistent format. I figured wed want the same format to be able to look at the same day or hour between the data frames.
++ (From Zach) The first thing I did in the rmd file was to get the dates in a consistent format. I figured we'd want the same format to be able to look at the same day or hour between the data frames.
 
 ## Questions
 
