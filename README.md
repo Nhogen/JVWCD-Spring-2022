@@ -31,3 +31,4 @@
 + There is a NULL value in the 2 year system demand table. What do we do with NULL's? (Zach)
 + The grain for weather data is daily. Do we want the model output to be daily or hourly? (Zach)
 + If we want the output to be daily how should we agregate the hourly demand to get daily? (Zach)
++ It looks like there are 3 negative values in hourly_demand in the sd file. I assume we would just remove those as errors? (Nate)
