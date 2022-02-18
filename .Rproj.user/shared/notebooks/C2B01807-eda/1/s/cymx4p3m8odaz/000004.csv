@@ -1,0 +1,7 @@
+"0","sd%>%"
+"0","  group_by(season)%>%"
+"0","  summarise(mean(hourly_demand))%>%"
+"0","  rename(avg_demand = 'mean(hourly_demand)')%>%"
+"0","  ggplot(aes(season, avg_demand))+"
+"0","  geom_col()+"
+"0","  theme_minimal()"
