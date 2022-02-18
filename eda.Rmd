@@ -22,7 +22,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Packages
 
 ```{r}
-list.of.packages <- c("tidyverse", "lubridate","chron","knitr")
+list.of.packages <- c("tidyverse", "lubridate","chron","knitr","corrplot","caret","scales","gridExtra")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
@@ -30,6 +30,10 @@ library(tidyverse)
 library(lubridate)
 library(chron)
 library(knitr)
+library(corrplot)
+library(caret)
+library(scales)
+library(gridExtra)
 ```
 
 ## Read CSV files and pre process
@@ -117,7 +121,7 @@ ggplot(sd,aes(hourly_demand))+
   facet_wrap(~CalendarMonth)
 ```
 
-## Add a season variable to all tables
+### Add a season variable to all tables
 
 ```{r}
 sd <- sd%>%
@@ -165,7 +169,8 @@ ggplot(sd,aes(hourly_demand))+
 
 > The difference between 2020 and 2021 don't seem very notable.
 
-## Add Hour and Min columns
+### Add Hour and Min columns
+
 ```{r}
 sd2 <- as.data.frame(str_split_fixed(sd$time,':',2))%>%
   rename(Hour = V1, Min = V2)
@@ -417,3 +422,75 @@ wd%>%
   rename(avg_demand = 'mean(daily_demand)')
 ```
 
+# Numeric Variable Examination 
+
+### Factor Rain Days
+
+```{r}
+wd <- wd%>%
+  mutate(RainDays = factor(RainDays))
+
+```
+
+## Relation to Daily Demand
+
+```{r}
+wdn <- wd%>%
+  select_if(is.numeric)
+
+#an attempt to manually look at the most important numberic vars
+cwdn <- cor(wdn, use="pairwise.complete.obs")
+cwdn1 <- data.frame(sort(cwdn[,'daily_demand'], decreasing = TRUE))
+
+cwdn1%>%
+  rename(Correlation = "sort.cwdn....daily_demand....decreasing...TRUE.")
+```
+## Correlation of logged mean temprature with logged daily demand
+
+```{r}
+ggplot(wdn, aes(log(TemperatureMean),log(daily_demand)))+
+  geom_point()+ stat_smooth(method="lm", se=FALSE)
+
+```
+
+## Correlation of logged Precipitation with logged daily demand
+
+```{r}
+ggplot(wdn, aes(log(Precipitation),log(daily_demand)))+
+  geom_point()+ stat_smooth(method="lm", se=FALSE)
+
+```
+
+## Correlation of logged SnowFall with logged daily demand
+
+```{r}
+ggplot(wdn, aes(log(SnowFall),log(daily_demand)))+
+  geom_point()+ stat_smooth(method="lm", se=FALSE)
+
+```
+
+
+
+## Correlation of logged CoolingDegreeDays with logged daily demand
+
+```{r}
+ggplot(wdn, aes(log(CoolingDegreeDays),log(daily_demand)))+
+  geom_point()+ stat_smooth(method="lm", se=FALSE)
+
+```
+
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+
+```
