@@ -1,0 +1,7 @@
+"0","ggplot(wdn, aes(log(CoolingDegreeDays),log(daily_demand)))+"
+"0","  geom_point()+ stat_smooth(method=""lm"", se=FALSE)"
+"2","`geom_smooth()` using formula 'y ~ x'
+"
+"2","Warning:"
+"2"," Removed 3048 rows containing non-finite values (stat_smooth).
+"
