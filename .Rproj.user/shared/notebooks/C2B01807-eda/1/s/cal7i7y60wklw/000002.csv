@@ -1,0 +1,8 @@
+"0","list.of.packages <- c(""tidyverse"", ""lubridate"",""chron"",""knitr"")"
+"0","new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,""Package""])]"
+"0","if(length(new.packages)) install.packages(new.packages)"
+"0",""
+"0","library(tidyverse)"
+"0","library(lubridate)"
+"0","library(chron)"
+"0","library(knitr)"
