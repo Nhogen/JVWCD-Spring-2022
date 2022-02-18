@@ -1,7 +1,0 @@
-"0","sp%>%"
-"0","  group_by(season)%>%"
-"0","  summarise(sum(reservoir_trend_cfs))%>%"
-"0","  rename(sum_of_demand = 'sum(reservoir_trend_cfs)')%>%"
-"0","  ggplot(aes(season, sum_of_demand))+"
-"0","  geom_col()+"
-"0","  theme_minimal()"
