@@ -1,0 +1,7 @@
+"0","wd%>%"
+"0","  mutate(snow_day = ifelse(SnowFall>0,1,0))%>%"
+"0","  group_by(snow_day)%>%"
+"0","  mutate(count_of_days = 1)%>%"
+"0","  summarise(count_of_days = sum(count_of_days),"
+"0","            mean(daily_demand))%>%"
+"0","  rename(avg_demand = 'mean(daily_demand)')"

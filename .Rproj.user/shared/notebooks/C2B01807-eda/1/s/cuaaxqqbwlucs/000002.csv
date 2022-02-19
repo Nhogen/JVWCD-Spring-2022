@@ -1,0 +1,4 @@
+"0","#It appears that there are 3 instances with negative hourly demand."
+"0","#Does this actually mean that water was given back or is this an error?"
+"0","sd %>% "
+"0","  filter(hourly_demand<0)"

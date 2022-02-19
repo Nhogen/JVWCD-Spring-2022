@@ -1,0 +1,5 @@
+"0",""
+"0","#Is there an entry for each hour of each day of each year?"
+"0","sd %>% "
+"0","  group_by(CalendarDay) %>% "
+"0","  summarize(count=n())"
