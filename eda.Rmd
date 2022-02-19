@@ -1,7 +1,7 @@
 ---
-title: "EDA"
+title: "Exploratory Data Analysis"
 author: "JVWCD Capstone Group"
-date: "1/23/2022"
+date: "2/20/2022"
 output: 
   html_document:
     highlight: breezedark
@@ -16,6 +16,12 @@ editor_options:
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+# Business Statement
+
+# Analytic Objectives
+
+# Exploratory Questions
+
 
 # Read Data
 
@@ -180,6 +186,9 @@ ggplot(sd,aes(hourly_demand))+
   geom_histogram()+
   theme_minimal()+
   facet_wrap(~season)
+
+#What are the x axis values in each of these histograms?
+
 ```
 
 ## Hourly Demand Histogram by Calendar year
@@ -191,7 +200,8 @@ ggplot(sd,aes(hourly_demand))+
   facet_wrap(~CalendarYear)
 ```
 
-> The difference between 2020 and 2021 don't seem very notable.
+> The difference between 2020 and 2021 don't seem very notable. 
+> This is super interesting considering 2021 was considered a major drought year. Does look like the demand in 2021 was a bit higher surprisingly.
 
 ### Add Hour and Min columns
 
@@ -213,7 +223,7 @@ sd%>%
   geom_col()+
   theme_minimal()
 ```
-> Demand seems to drop towards the middle of the day
+> Demand seems to drop towards the middle of the day. This makes sense as people typically water during the early morning hours
 
 ## Average Hourly Demand by Season
 
@@ -267,6 +277,7 @@ sd%>%
 ```
 
 > It looks like 2020 had slightly more water demand.
+
 
 # System Demand By Point Type
 
@@ -589,3 +600,24 @@ ggplot(wdn, aes(log(CoolingDegreeDays),log(daily_demand)))+
 
 
 ```
+# Results and Conclusions
+A lot of this makes logical sense-more demand on hotter days/season when there isn't precipitation. 
+
+
+# Questions for Jordan Valley
+Difference in weather and water granularity?
+What do we do with NULLs?
+What do we do with negative hourly demand values?
+Missing hourly entries?
+If a lot of this data makes logical sense (meaning we can generally predict demand based on past data and an upcoming weather forecast), what additional value is Jordan Valley looking for in a prediction model?
+
+
+# Member Contributions
+
+Jake:  
+
+Nate:
+
+Zach:
+
+Jackson:
