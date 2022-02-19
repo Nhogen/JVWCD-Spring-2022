@@ -34,6 +34,8 @@ library(corrplot)
 library(caret)
 library(scales)
 library(gridExtra)
+library(useful)
+library(ISOweek)
 ```
 
 ## Read CSV files and pre process
@@ -96,6 +98,29 @@ remove(sp2,sp3,sp4)
 ```
 > Something important to note is that the weather data is daily and demand data is hourly so we should ask if they want to change to hourly weather data or as how we want to agregate daily demand so we can match the grain for our model.
 
+>Also note below some errors found and questions raised on initial data inspection
+
+```{r}
+#It appears that there are 3 instances with negative hourly demand.
+#Does this actually mean that water was given back or is this an error?
+sd %>% 
+  filter(hourly_demand<0)
+
+#Is there an entry for each hour of each day of each year?
+sd %>% 
+  group_by(CalendarDay) %>% 
+  summarize(count=n())
+#No there is not. We are missing 2 hours on the 8th and 14th of some year
+sd[sd$time %in% "",]
+#It looks like row 1610 show that we don't have data for 01h00 - 04h00
+#one row is NA, and there is a missing column
+#On 3/8/2020
+#And the exact same gap on row 10513 03/14/2021
+
+#Is there possibly some planned maintenance going on in early March of each year?
+```
+
+
 # 2 year system demand
 
 ```{r}
@@ -147,7 +172,6 @@ wa <- wa%>%
                                        ifelse(CalendarMonth %in% c('12','1','2'), 'Winter','0')))))%>%
   filter(season != '0')
 ```
-
 
 ## Hourly Demand Histogram by season
 
@@ -353,6 +377,7 @@ summary(wa)
 # System Demand joined to Weather Data from Salt Lake Airport
 
 ```{r}
+#Snapshot View
 sd1 <- sd%>%
   group_by(date)%>%
   summarise(daily_demand = mean(hourly_demand),
@@ -373,6 +398,76 @@ remove(sd1,sd2,wa1)
 summary(wd)
 
 ```
+
+##Merge Data
+```{r}
+#Weather data begins prior to 2020 where the system data begins. Truncate for merging
+merweth=wa %>% 
+  filter(CalendarYear>=2020)
+#Date column is a character. Convert to date
+merweth=merweth %>% 
+  mutate(WeatherDate = as.Date(WeatherDate,format="%m/%d/%Y"))
+#Date column is in POSIXct format. Convert to date
+mersd=sd %>% 
+  mutate(ActualDate = as.Date(paste(as.numeric(sd$CalendarMonth),
+                                    as.numeric(sd$CalendarDay),
+                                    as.numeric(sd$CalendarYear),
+                                    sep="-"),
+                                    format="%m-%d-%Y"))
+#Change hourly_demand to avg_daily demand for merge
+mershrink=mersd %>% 
+  group_by(ActualDate) %>% 
+  summarize(avgdaily_demand = mean(hourly_demand))
+#remove NA at the bottom
+mershrink=mershrink[1:731,]
+#Merge Datasets
+merginated = merge(mershrink,merweth,by.x = "ActualDate",
+                   by.y = "WeatherDate",all.y = TRUE,
+                   all.x = FALSE)
+```
+
+## Check for useful predictors
+```{r}
+#Clear out redundant columns
+merginated=merginated[,c(1,2,8,9,12,13,14)]
+mermod<-lm(avgdaily_demand~.,data = merginated)
+summary(mermod)
+#Here we can see that Precipitation has a p value of 0.09. logically rain
+#coming same day should not affect as much as recent days (within a week or so)
+
+#Create ISO week number identifier column
+merginated = merginated %>% 
+  mutate(weeknum = ISOweek(ActualDate))
+#Create list to show precipitation for a given ISO week number
+weekref = merginated %>% 
+  group_by(weeknum) %>% 
+  summarize(weekfall = sum(Precipitation))
+#Visualize
+weekref %>% 
+  ggplot(aes(weeknum,weekfall))+
+  geom_col()+
+  theme(axis.text.x = element_text(angle = 90))+
+  ggtitle("Precipitation by Week Number")
+#Seems a bit sporadic
+
+#shift column so that list shows prior week precipitation
+weekref = shift.column(weekref,columns = "weekfall",len = 1L,up=TRUE)
+weekref = weekref[,c(1,3)]
+weekref = weekref %>% 
+  rename(prevweekfall = weekfall.Shifted)
+#Merge list to create column showing rainfall by previous week
+Merged_Data_Prevweek = merge(merginated,weekref,by.x = "weeknum",by.y = "weeknum",all.y = TRUE,all.x = TRUE)
+mergiweek=Merged_Data_Prevweek[,c(2,3,4,6,7,8,9)]
+merwod<-lm(avgdaily_demand~.,data = mergiweek)
+#Simple regression showing variables with previous week rainfall included
+summary(merwod)
+#Does seem to be significant
+
+#Remove temp data frames
+remove(mergiweek,weekref,merwod,mermod,mersd,merweth,mershrink,merginated)
+```
+>Perhaps we should explore using previous week's precipitation data for prediction.
+Or in some other way reference recent precipitation history instead of same day history
 
 ## Average Demand by TemperatureMean
 
