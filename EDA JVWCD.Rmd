@@ -20,10 +20,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Business Statement
 
-There is a strong correlation between water usage and the weather in the water industry. Water usage increases
+There is a strong correlation between water usage and weather patterns in the water industry. Water usage increases
 during warmer and drier periods, and when it’s colder and wetter, water usage is typically less. Jordan Valley
 Water Conservancy District (JVWCD) has noticed this trend and is wanting to find a solution that will allow
-them to be more proactive instead of reactive with these seasonal trends.
+them to be more proactive and not so reactive to changes in water demand with these seasonal trends.
 
 Historically, operations staff have worked in a reactive state chasing water demands of community members,
 which is influenced by changing weather. Most of this variability happens in the summer, with residential
@@ -45,17 +45,11 @@ so that they can move to a more proactive form of water deliveries.
 # Analytic Objectives
 
 System demand is calculated by adding all the individual sources and subtracting the reservoir trends
-from the total. JVWCD has provided system data to use for modeling. This is time series data and could
+from the total. JVWCD has provided system data to use for modeling. This is time series data and will
 require some cleaning before use in a model.
 
-JVWCD is currently using the online version of Tableau. It would be ideal if we had a model that could
-be used there so as to reduce the amount of training it would take to implement this model. JVWCD pays
-for 30 licenses of Tableau Online.
-
-One aspect of the analytics problem is selecting a weather service to provide weather data. The one that
-stands out to us right now is openweathermap.org and we’d likely get the information we need from the
-free version but are also looking at other options to compare against. The team will look at two additional
-sources of weather data to benchmark against the desired version (openweathermap.org).
+Our analytic objective in this project will be to develop a model that utilizes past weather and water demand
+data to provide water demand predictions for the JVWCD Operations Staff. 
 
 
 # Exploratory Questions
@@ -64,13 +58,13 @@ The questions below were crafted prior to our EDA. We used these questions to he
 
 Is there strong correlations between the different weather metrics and the different point type?
 Do we see a seasonal trend with the data?
-Can the weather help predict demand?
+Can the weather forecast help predict demand?
 How does weather change season by season?
 Is there anything useful with hourly data vs. daily weather data?
 How does demand change from month to month?
 Is there a correlation between demand and temperature, and how strong is that correlation?
 What are the best predictor variables to help predict daily demand?
-Seasonal variation?
+How does the seasonal variation change the hourly water demand?
 
 
 # Read Data
@@ -161,7 +155,7 @@ sp <- cbind(sp,sp2,sp3,sp4)%>%
 #Get rid of temp dfs
 remove(sp2,sp3,sp4)
 ```
-> Something important to note is that the weather data is daily and demand data is hourly so we should ask if they want to change to hourly weather data or as how we want to agregate daily demand so we can match the grain for our model.
+> Something important to note is that the weather data is daily and demand data is hourly so we should ask if they want to change to hourly weather data or as how we want to aggregate daily demand so we can match the grain for our model.
 
 >Also note below some errors found and questions raised on initial data inspection
 
@@ -185,7 +179,7 @@ sd[sd$time %in% "",]
 ```
 
 
-## Add a season variable to all tables
+## Add a Season Variable to All Tables
 
 ```{r}
 sd <- sd%>%
@@ -212,7 +206,7 @@ wa <- wa%>%
   filter(season != '0')
 ```
 
-## System Demand joined to Weather Data from Salt Lake Airport
+## System Demand Joined to Weather Data from Salt Lake Airport
 
 ```{r}
 #Snapshot View
@@ -285,7 +279,7 @@ remove(sd2)
 ```
 
 
-# 2 year system demand
+# 2 Year System Demand
 
 ```{r}
 glimpse(sd)
@@ -311,7 +305,7 @@ ggplot(sd,aes(hourly_demand))+
 ```
 
 
-## Hourly Demand Histogram by season
+## Hourly Demand Histogram by Season
 
 ```{r}
 ggplot(sd,aes(hourly_demand))+
@@ -323,7 +317,7 @@ ggplot(sd,aes(hourly_demand))+
 
 ```
 
-## Hourly Demand Histogram by Calendar year
+## Hourly Demand Histogram by Calendar Year
 
 ```{r}
 ggplot(sd,aes(hourly_demand))+
@@ -332,10 +326,7 @@ ggplot(sd,aes(hourly_demand))+
   facet_wrap(~CalendarYear)
 ```
 
-> The difference between 2020 and 2021 don't seem very notable. 
-> This is super interesting considering 2021 was considered a major drought year. Does look like the demand in 2021 was a bit higher surprisingly.
-
-
+> The difference between 2020 and 2021 hourly demands don't seem very notable. 
 
 ## Average Hourly Demand
 
@@ -348,7 +339,7 @@ sd%>%
   geom_col()+
   theme_minimal()
 ```
-> Demand seems to drop towards the middle of the day. This makes sense as people typically water during the early morning hours
+> Demand seems to drop towards the middle of the day. This makes logical sense as people typically water during the early morning hours.
 
 ## Average Hourly Demand by Season
 
@@ -363,7 +354,7 @@ sd%>%
   facet_wrap(~season)
 ```
 
-> Seems like the Demand is higher in the summer as expected and seems to be higher earlier in the day.
+> Seems like the Demand is higher in the Summer as expected and seems to be higher earlier in the day.
 
 ## Average Season Demand
 
@@ -376,7 +367,7 @@ sd%>%
   geom_col()+
   theme_minimal()
 ```
-> The average demand is way higherin the summer and the next highest is fall.
+> The average demand is much higher in the summer and the next highest is fall.
 
 ## Average Monthly Demand
 
@@ -401,7 +392,7 @@ sd%>%
   theme_minimal()
 ```
 
-> It looks like 2020 had slightly more water demand.
+> It looks like 2020 had slightly more water demand as a whole. This makes logical sense because of the drought conditions that were present throughout 2021.
 
 
 # System Demand By Point Type
@@ -468,7 +459,7 @@ sp%>%
   theme_minimal()
 ```
 
-> Injected flow seems to only happen durring the winter
+> Injected flow seems to only happen during the winter
 
 ## Injected Flow Histogram
 
@@ -492,7 +483,7 @@ sp%>%
   theme_minimal()
 ```
 
-> I did sum on this one becase it had a lot of weird negative and positive and I wanted to see how it corelated
+> I did sum on this one becase it had a lot of weird negative and positive and I wanted to see how it correlated
 
 ## Reservoir Flow Histogram
 
@@ -619,8 +610,6 @@ cwdn1%>%
 ```
 
 ```{r}
-
-
 #Correlation Plot
 
 #Calculate correlation
@@ -636,21 +625,11 @@ df_numericVars <- which(sapply(wdn, is.numeric))
 df_numVar <- wdn[, df_numericVars]
 df_cor_numVar <- cor(df_numVar, use="pairwise.complete.obs") 
 
-
-
 # Correlation of numeric variables with their numbers and shap/color relation to sale price
 corrplot.mixed(df_cor_numVar, tl.col="black", tl.pos = "lt", tl.cex = 0.7,cl.cex = .7, number.cex=.7)
 
 corrplot(df_cor_numVar, tl.col="black", tl.pos = "lt", tl.cex = 0.7,cl.cex = .7, number.cex=.7, method = "number")
 ```
-
-
-
-
-
-
-
-
 
 
 ## Correlation of logged mean temprature with logged daily demand
@@ -690,18 +669,16 @@ ggplot(wdn, aes(log(CoolingDegreeDays),log(daily_demand)))+
 
 # Results and Conclusions
 
-During this EDA we discovered that are initial assumption holds true. Temperature plays an important role in water usage. There is more demand on hotter days and seasons when there isn't precipitation. We can see that there are correlations between daily demand and Temperature Mean, Min, and Max, CoolingDegreeDays, SnowDepth, Precipitation, and Snowfall. The weather data available currently only tracks metrics on a daily basis. The data received from JVWCD tracks demand minute by minute.We then merged and aggregated the data to fit our needs. We ran a linear regression where we discovered that the previous week precipitation is significant along with temperature and therefore seasons.Additionally, we see how the different point types are affected by the weather data as well and there overall distribution. Our initial goal is to successfully predict daily demand and then see how that compares with the necessary point types. 
-
-
-
+During this EDA we discovered that are initial assumption holds true. Temperature plays an important role in water usage. There is more demand on hotter days and seasons when there isn't precipitation. We can see that there are correlations between daily demand and Temperature Mean, Min, and Max, CoolingDegreeDays, SnowDepth, Precipitation, and Snowfall. The weather data available currently only tracks metrics on a daily basis. The data received from JVWCD tracks demand minute by minute. We then merged and aggregated the data to fit our needs. We ran a linear regression where we discovered that the previous week precipitation is significant along with temperature and therefore seasons.Additionally, we see how the different point types are affected by the weather data as well and there overall distribution. Our initial goal is to successfully predict daily demand and then see how that compares with the necessary point types. 
 
 
 # Questions for Jordan Valley
-Difference in weather and water granularity?
+Difference in weather and water granularity? Is hourly weather data available? Or are we going to change our forecast granularity to daily to match with the weather?
 What do we do with NULLs?
 What do we do with negative hourly demand values?
 Missing hourly entries?
 If a lot of this data makes logical sense (meaning we can generally predict demand based on past data and an upcoming weather forecast), what additional value is Jordan Valley looking for in a prediction model?
+At this point, does it make sense to move forward by moving this cleaned and merged data into a Tableau dashboard/forecast?
 
 
 # Member Contributions
@@ -718,3 +695,5 @@ Included merged data frame showing previous week's precipitation to check for pr
 Zach:
 
 Jackson:
+Coordinated EDA meetings between team members and University staff
+Code and Write Up Review
