@@ -296,7 +296,7 @@ remove(sd2)
 ```
 
 
-# Two Year System Demand
+# 2 Year System Demand
 
 ```{r}
 kable(head(sd))
@@ -530,7 +530,7 @@ summary(wa)
 ```
 
 
-## Linear Regression to look at useful predictors
+## Check for useful predictors
 
 ```{r}
 #Clear out redundant columns
@@ -559,10 +559,6 @@ weekref %>%
   ggtitle("Precipitation by Week Number")
 #Seems a bit sporadic
 ```
-
-## Linear Regression for impact of prevweekfall
-
-prevweekfall is a variable that represents last weeks rainfall.
 
 ```{r}
 #shift column so that list shows prior week precipitation
@@ -720,39 +716,30 @@ During this EDA we discovered that are initial assumption holds true. Temperatur
 
 
 # Questions for Jordan Valley
-
-+ What should we do with the difference in weather and water granularity? Is hourly weather data available, or are we going to change our forecast granularity to daily to match with the weather?
-+ What do we do with NULLs?
-+ What do we do with negative hourly demand values?
-+ What do we do with missing hourly entries?
-+ If a lot of this data makes logical sense (meaning we can generally predict demand based on past data and an upcoming weather forecast), what additional value is Jordan Valley looking for in a prediction model?
-
-# Questions for ourselves
-
-+ How will we incorporate what we learned into Tableau?
-+ How can we get this data into Tableau and can we accomplish the same merges and feature engineering we did above Tableau dashboard/forecast?
+Difference in weather and water granularity? Is hourly weather data available? Or are we going to change our forecast granularity to daily to match with the weather?
+What do we do with NULLs?
+What do we do with negative hourly demand values?
+Missing hourly entries?
+If a lot of this data makes logical sense (meaning we can generally predict demand based on past data and an upcoming weather forecast), what additional value is Jordan Valley looking for in a prediction model?
+At this point, does it make sense to move forward by moving this cleaned and merged data into a Tableau dashboard/forecast?
 
 
 # Member Contributions
 
-**Jake:**
-
+Jake: 
 Added correlations plots
 Formatted final report
 Added business problem, and analytical objective
 
-**Nate:**
-
+Nate:
 Included highlights of N/A and negative values to discuss
 Included merged data frame showing previous week's precipitation to check for prediction power of recent rainfall
 
-**Zach:**
+Zach:
+Formatted time data to match between all three tables. Added season variable. Created a bunch of plots looking at averages compared to seasons and other variables such as temperature. Joined System data to Weather data to look at correlations. Looked at correlation of numerical variables to target variable. Tried logging to see what that did to correlations.
 
-Formatted time data to match between all three tables. Added season variable. Created a bunch of plots looking at averages compared to seasons and other variables such as temperature. Joined System data to Weather data to look at correlations. Looked at correlation of numerical variables to target variable. Tried logging to see what that did to correlations. Added some markdown formatting.
 
-
-**Jackson:**
-
+Jackson:
 Coordinated EDA meetings between team members and University staff
 Code and Write Up Review
 

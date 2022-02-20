@@ -1,3 +1,0 @@
-"0","sd %>% "
-"0","  group_by(CalendarDay) %>% "
-"0","  summarize(count=n())"
