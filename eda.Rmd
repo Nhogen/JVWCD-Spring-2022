@@ -742,7 +742,7 @@ ggplot(wdn, aes(log(CoolingDegreeDays),log(daily_demand)))+
 
 # Results and Conclusions
 
-During this EDA we discovered that are initial assumption holds true.
+During this EDA we discovered that our initial assumption holds true.
 Temperature plays an important role in water usage. There is more demand
 on hotter days and seasons when there isn't precipitation. We can see
 that there are correlations between daily demand and Temperature Mean,
@@ -753,9 +753,9 @@ then merged and aggregated the data to fit our needs. We ran a linear
 regression where we discovered that the previous week precipitation is
 significant along with temperature and therefore seasons.Additionally,
 we see how the different point types are affected by the weather data as
-well and there overall distribution. How initial goal is to successfully
+well and their overall distribution. Our initial goal is to successfully
 predict daily demand and then see how that compares with the necessary
-point types.
+point types and therefore eventually be able to predict demand at each point type.
 
 # Questions for Jordan Valley
 
@@ -778,7 +778,7 @@ point types.
 
 -   Jake
 
-Added correlations plots Formatted final report. Added business problem, and analytical objective.
+Added correlations plots. Formatted final report. Added business problem, and analytical objective.
 
 
 -   Nate
