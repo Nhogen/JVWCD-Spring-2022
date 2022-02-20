@@ -177,9 +177,8 @@ sd %>%
   summarize(count=n())
 #No there is not. We are missing 2 hours on the 8th and 14th of some year
 sd[sd$time %in% "",]
-#It looks like row 1610 show that we don't have data for 01h00 - 04h00
+#It looks like row 1610 show that we don't have data for 01h00 - 04h00 on 3/8/2020
 #one row is NA, and there is a missing column
-#On 3/8/2020
 #And the exact same gap on row 10513 03/14/2021
 
 #Is there possibly some planned maintenance going on in early March of each year?
@@ -691,7 +690,7 @@ ggplot(wdn, aes(log(CoolingDegreeDays),log(daily_demand)))+
 
 # Results and Conclusions
 
-During this EDA we discovered that are initial assumption holds true. Temperature plays an important role in water usage. There is more demand on hotter days and seasons when there isn't precipitation. We can see that there are correlations between daily demand and Temperature Mean, Min, and Max, CoolingDegreeDays, SnowDepth, Precipitation, and Snowfall. The weather data available currently only tracks metrics on a daily basis. The data received from JVWCD tracks demand minute by minute.We then merged and aggregated the data to fit our needs. We ran a linear regression where we discovered that the previous week precipitation is significant along with temperature and therefore seasons.Additionally, we see how the different point types are affected by the weather data as well and there overall distribution. How initial goal is to successfully predict daily demand and then see how that compares with the necessary point types. 
+During this EDA we discovered that are initial assumption holds true. Temperature plays an important role in water usage. There is more demand on hotter days and seasons when there isn't precipitation. We can see that there are correlations between daily demand and Temperature Mean, Min, and Max, CoolingDegreeDays, SnowDepth, Precipitation, and Snowfall. The weather data available currently only tracks metrics on a daily basis. The data received from JVWCD tracks demand minute by minute.We then merged and aggregated the data to fit our needs. We ran a linear regression where we discovered that the previous week precipitation is significant along with temperature and therefore seasons.Additionally, we see how the different point types are affected by the weather data as well and there overall distribution. Our initial goal is to successfully predict daily demand and then see how that compares with the necessary point types. 
 
 
 
@@ -713,6 +712,8 @@ Formatted final report
 Added business problem, and analytical objective
 
 Nate:
+Included highlights of N/A and negative values to discuss
+Included merged data frame showing previous week's precipitation to check for prediction power of recent rainfall
 
 Zach:
 
