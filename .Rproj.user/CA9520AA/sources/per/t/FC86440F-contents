@@ -376,6 +376,20 @@ sd%>%
 
 > Seems like the Demand is higher in the Summer as expected and seems to be higher earlier in the day.
 
+
+## Average Hourly Demand by Month
+
+```{r}
+sd%>%
+  group_by(CalendarMonth,Hour)%>%
+  summarise(mean(hourly_demand))%>%
+  rename(avg_demand = 'mean(hourly_demand)')%>%
+  ggplot(aes(Hour, avg_demand))+
+  geom_col()+
+  theme_minimal()+
+  facet_wrap(~CalendarMonth)
+```
+
 ## Average Season Demand
 
 ```{r}

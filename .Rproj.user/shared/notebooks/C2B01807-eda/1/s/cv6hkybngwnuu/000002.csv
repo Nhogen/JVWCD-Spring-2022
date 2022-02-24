@@ -1,0 +1,6 @@
+"0","sd2 <- as.data.frame(str_split_fixed(sd$time,':',2))%>%"
+"0","  rename(Hour = V1, Min = V2)"
+"0",""
+"0","sd <- cbind(sd,sd2)"
+"0",""
+"0","remove(sd2)"
