@@ -596,7 +596,175 @@ summary(merwod)
 remove(mergiweek,weekref,merwod,mermod,mersd,merweth,mershrink,merginated)
 ```
 
-> Perhaps we should explore using previous week's precipitation data for prediction as it seesms to have a higher p value. Or in some other way reference recent precipitation history instead of same day history
+
+
+
+
+
+
+
+
+
+#Attempt at prevday/prev3day
+```{r}
+
+
+#Create
+Mergiday = shift.column(Merged_Data_Prevweek,columns = 'avgdaily_demand',len = 1L,up=TRUE)
+Mergiday = Mergiday %>% 
+  rename(PrevDay = avgdaily_demand.Shifted)
+
+Mergiday = Mergiday %>% 
+  select(-one_of('prevweekfall','weeknum'))
+
+#3 Days
+moving_avg_3_rows <- function(x){
+  (lag(x,3) + lag(x,2) + lag(x,1))/3
+}
+
+IfError <- function(code, silent = FALSE) {
+  tryCatch(code, error = function(c) {
+    if (!silent) {"Error Message"}
+    else{code}})
+}
+
+Mergi3day = Merged_Data_Prevweek %>% 
+  mutate(Prev3Day = ifelse(is.na(moving_avg_3_rows(avgdaily_demand)),avgdaily_demand,
+                           moving_avg_3_rows(avgdaily_demand)))
+Mergi3day = Mergi3day %>% 
+  select(-one_of('prevweekfall','weeknum'))
+
+day<-lm(avgdaily_demand~.,data = Mergiday)
+day3<-lm(avgdaily_demand~.,data = Mergi3day)
+
+summary(day)
+summary(day3)
+
+```
+
+#Split Data
+```{r}
+#3 previous days
+rsq <- function (x, y) cor(x, y) ^ 2
+set.seed(123)
+training_samples <- Mergi3day$avgdaily_demand %>% 
+  createDataPartition(p = 0.7,list = FALSE)
+
+Mergi3train <- Mergi3day[training_samples,]
+Mergi3test <- Mergi3day[-training_samples,]
+
+mod3 <- lm(avgdaily_demand ~., data=Mergi3train)
+
+predictions <- mod3 %>% 
+  predict(Mergi3test)
+
+compare <- data.frame(actual = Mergi3test$avgdaily_demand,
+                      predicted = predictions)
+
+error <- RMSE(predictions,Mergi3test$avgdaily_demand)
+
+
+rsq(compare$actual,compare$predicted)
+
+#1 day = 0.961867
+#2 days = 0.9728684
+#3 days = 0.9758512
+#4 days = 0.973445
+#5 days = 0.9712492
+#6 days = 0.9701669
+
+```
+
+```{r}
+#Control (nothing added)
+control = Merged_Data_Prevweek %>% 
+  select(-one_of('prevweekfall','weeknum'))
+rsq <- function (x, y) cor(x, y) ^ 2
+set.seed(123)
+training_samples <- control$avgdaily_demand %>% 
+  createDataPartition(p = 0.7,list = FALSE)
+
+Mergi3train <- control[training_samples,]
+Mergi3test <- control[-training_samples,]
+
+mod3 <- lm(avgdaily_demand ~., data=control)
+
+predictions <- mod3 %>% 
+  predict(Mergi3test)
+
+compare <- data.frame(actual = Mergi3test$avgdaily_demand,
+                      predicted = predictions)
+
+error <- RMSE(predictions,Mergi3test$avgdaily_demand)
+
+
+rsq(compare$actual,compare$predicted)
+```
+
+
+```{r}
+#PrevDay
+set.seed(123)
+training_samples <- Mergiday$avgdaily_demand %>% 
+  createDataPartition(p = 0.7,list = FALSE)
+
+Mergitrain <- Mergiday[training_samples,]
+Mergitest <- Mergiday[-training_samples,]
+
+modprev <- lm(avgdaily_demand ~., data=Mergiday)
+
+predictions <- modprev %>% 
+  predict(Mergitest)
+
+compare <- data.frame(actual = Mergitest$avgdaily_demand,
+                      predicted = predictions)
+
+error <- RMSE(predictions,Mergitest$avgdaily_demand)
+
+
+rsq(compare$actual,compare$predicted)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+> Perhaps we should explore using previous week's precipitation data for prediction as it seems to have a higher p value. Or in some other way reference recent precipitation history instead of same day history
 
 
 ## Average Demand by TemperatureMean
