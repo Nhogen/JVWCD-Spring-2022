@@ -1,7 +1,0 @@
-"0","wd%>%"
-"0","  group_by(SnowDepth)%>%"
-"0","  summarise(mean(daily_demand))%>%"
-"0","  rename(avg_demand = 'mean(daily_demand)')%>%"
-"0","  ggplot(aes(SnowDepth, avg_demand))+"
-"0","  geom_col()+"
-"0","  theme_minimal()"
