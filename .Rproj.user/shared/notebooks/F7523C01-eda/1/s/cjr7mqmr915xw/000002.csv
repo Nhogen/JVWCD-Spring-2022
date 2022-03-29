@@ -1,0 +1,6 @@
+"0","#Control (nothing added)"
+"0","control = Merged_Data_Prevweek %>% "
+"0","  select(-one_of('prevweekfall','weeknum'))"
+"2","Error in Merged_Data_Prevweek %>% select(-one_of(""prevweekfall"", ""weeknum"")) : 
+  could not find function ""%>%""
+"
