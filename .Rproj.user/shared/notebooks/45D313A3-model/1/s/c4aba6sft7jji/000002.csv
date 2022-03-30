@@ -1,0 +1,5 @@
+"0","#Add column for 3 day average"
+"0","mgd_avg = mgd_avg %>% "
+"0","  mutate(Prev3Day = ifelse(is.na(moving_avg_3_rows(Precipitation)),Precipitation,"
+"0","                           moving_avg_3_rows(Precipitation)))"
+"0",""
