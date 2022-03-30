@@ -1,0 +1,143 @@
+---
+title: "Model"
+author: "JVWCD Capstone Group"
+date: "3/29/2022"
+output: 
+  html_document:
+    highlight: breezedark
+    number_sections: yes
+    toc: yes
+    fig_width: 15
+    fig_height: 10
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Read Data
+
+## Packages
+
+```{r echo=T, results='hide', message=F, warning=F}
+list.of.packages <- c("tidyverse",
+                      "lubridate",
+                      "chron",
+                      "knitr",
+                      "corrplot",
+                      "caret",
+                      "scales",
+                      "gridExtra",
+                      "useful",
+                      "ISOweek",
+                      "kableExtra")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
+library(tidyverse)
+library(lubridate)
+library(chron)
+library(knitr)
+library(corrplot)
+library(caret)
+library(scales)
+library(gridExtra)
+library(useful)
+library(ISOweek)
+library(kableExtra)
+```
+
+## Read CSV files and pre process
+
+### Weather Data
+
+```{r}
+wa <- read.csv("new_weather_slc_airport.csv")%>%
+  mutate(season = ifelse(CalendarMonth %in% c('03','04','05'), 'Spring',
+                         ifelse(CalendarMonth %in% c('06','07','08'), 'Summer',
+                                ifelse(CalendarMonth %in% c('09','10','11'), 'Fall',
+                                       ifelse(CalendarMonth %in% c('12','01','02'), 'Winter','0')))),
+         RainDays = factor(RainDays),
+         date = as.Date(WeatherDate,format="%m/%d/%Y"))%>%
+  filter(CalendarYear>=2020)
+```
+
+### System Demand Data
+
+```{r}
+sd <- read.csv("new_daily_demand.csv")%>%
+  rename('avg_demand_cfs' = 'Avg.Daily.Demand..cfs.',
+         'avg_demand_af' = 'Avg.Daily.Demand..af.',
+         'avg_demand_mgd' = 'Avg.Daily.Demand..mgd.',
+         'max_demand_cfs' = 'Max.Daily.Demand..cfs.',
+         'max_demand_af' = 'Max.Daily.Demand..af.',
+         'max_demand_mgd' = 'Max.Daily.Demand..mgd.',
+         'min_demand_cfs' = 'Min.Daily.Demand..cfs.',
+         'min_demand_af' = 'Min.Daily.Demand..af.',
+         'min_demand_mgd' = 'Max.Daily.Demand..mgd..1')%>%#Clifton said this is a min
+  mutate(date = as.Date(ReadDate,format="%m/%d/%Y"))
+```
+
+> CFS (cubic feet per second) – This is a measurement of flow at a given point. It represents how many cubic feet pass a point in each second. For example, if you have an average of 30 cfs at 1 p.m., that means that during that hour, an average of 30 cubic feet was passing the point each second.
+
+
+> AF (acre feet) – This is a measurement of volume. One acre foot of water would cover an entire acre at a depth of one foot. It doesn’t have a time associated with it, so it isn’t a flow. For example, if you had 30 af at 1 p.m. that means a total of 30 acre-feet passed through that point during that hour. When converting a flow to a volume we must include a time measurement in the volume. So, an hourly acre-foot volume could be converted to cfs by converting it to a flow like acre-feet per hour.
+
+
+> MGD (million gallons per day) – This is also a flow measurement and is like cfs in that it represents an amount of water flowing past a point during a given time.
+
+> I think the most important measurement for our purposes is MGD since that’s the unit of measurement the Operations department uses. I’m checking up on that, though, and will let you know for sure. Also, it’s entirely possible that I’m not answering your question, so please feel free to clarify whatever you need. -Clifton
+
+### Join Weather and Demand Data
+
+```{r}
+glimpse(wa)
+
+```
+
+```{r}
+wd <- merge(wa,sd,by="date")
+
+
+```
+
+### MGD Average
+
+Taking out the demand that is not average MGD. Since the other data points are not demand we couldn't use them for a model.
+
+```{r}
+mgd_avg <- wd%>%
+  select(-avg_demand_cfs,
+         -avg_demand_af,
+         #-avg_demand_mgd, ## Target Variable
+         -max_demand_cfs,
+         -max_demand_af,
+         -max_demand_mgd,
+         -min_demand_cfs,
+         -min_demand_af,
+         -min_demand_mgd)%>%
+  select(-WeatherDate)
+  
+
+```
+
+> If we want to try to predict other vairables we can just uncomment avg_demand_mgd and comment out the one we want to predict for. Not sure if we want to do that though?
+
+# Split into Train and test
+
+```{r}
+set.seed(6496)
+
+ti <- createDataPartition(mgd_avg$avg_demand_mgd, p=0.7,
+                         list = FALSE)
+
+train <- wd[ti,]
+test <- wd[-ti,]
+
+summary(train)
+```
+
+
+

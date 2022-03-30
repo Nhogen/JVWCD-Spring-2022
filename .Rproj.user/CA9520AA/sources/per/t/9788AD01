@@ -1,0 +1,32 @@
+{
+    "id": "9788AD01",
+    "path": "~/GitHub/JVWCD-Spring-2022/eda.Rmd",
+    "project_path": "eda.Rmd",
+    "type": "r_markdown",
+    "hash": "731998177",
+    "contents": "",
+    "dirty": false,
+    "created": 1648604545777.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "chunk_output_type": "inline",
+        "source_window_id": "",
+        "Source": "Source",
+        "last_setup_crc32": "",
+        "cursorPosition": "705,8",
+        "scrollLine": "702",
+        "docOutlineVisible": "0",
+        "rmdVisualMode": "false",
+        "rmdVisualModeLocation": "291:0",
+        "rmdVisualWrapConfigured": "true"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1648566992,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1648566992,
+    "read_only": false,
+    "read_only_alternatives": []
+}

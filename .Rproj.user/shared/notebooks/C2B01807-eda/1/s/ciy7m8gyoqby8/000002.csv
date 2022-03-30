@@ -1,4 +1,0 @@
-"0","#Also note below some errors found and questions raised on initial data inspection."
-"0","sd %>% "
-"0","  filter(hourly_demand<0)%>%"
-"0","  kable()"

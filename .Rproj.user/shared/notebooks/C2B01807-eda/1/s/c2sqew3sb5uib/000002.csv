@@ -1,7 +1,0 @@
-"0","wd%>%"
-"0","  group_by(TemperatureMean)%>%"
-"0","  summarise(mean(daily_demand))%>%"
-"0","  rename(avg_demand = 'mean(daily_demand)')%>%"
-"0","  ggplot(aes(TemperatureMean, avg_demand))+"
-"0","  geom_line()+"
-"0","  theme_minimal()"
