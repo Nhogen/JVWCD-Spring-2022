@@ -76,24 +76,61 @@ sd <- read.csv("new_daily_demand.csv")%>%
          'max_demand_mgd' = 'Max.Daily.Demand..mgd.',
          'min_demand_cfs' = 'Min.Daily.Demand..cfs.',
          'min_demand_af' = 'Min.Daily.Demand..af.',
-         'min_demand_mgd' = 'Max.Daily.Demand..mgd..1')%>%#assumed this was a min
+         'min_demand_mgd' = 'Max.Daily.Demand..mgd..1')%>%#Clifton said this is a min
   mutate(date = as.Date(ReadDate,format="%m/%d/%Y"))
 ```
+
+> CFS (cubic feet per second) – This is a measurement of flow at a given point. It represents how many cubic feet pass a point in each second. For example, if you have an average of 30 cfs at 1 p.m., that means that during that hour, an average of 30 cubic feet was passing the point each second.
+
+
+> AF (acre feet) – This is a measurement of volume. One acre foot of water would cover an entire acre at a depth of one foot. It doesn’t have a time associated with it, so it isn’t a flow. For example, if you had 30 af at 1 p.m. that means a total of 30 acre-feet passed through that point during that hour. When converting a flow to a volume we must include a time measurement in the volume. So, an hourly acre-foot volume could be converted to cfs by converting it to a flow like acre-feet per hour.
+
+
+> MGD (million gallons per day) – This is also a flow measurement and is like cfs in that it represents an amount of water flowing past a point during a given time.
+
+> I think the most important measurement for our purposes is MGD since that’s the unit of measurement the Operations department uses. I’m checking up on that, though, and will let you know for sure. Also, it’s entirely possible that I’m not answering your question, so please feel free to clarify whatever you need. -Clifton
 
 ### Join Weather and Demand Data
 
 ```{r}
-wd <- merge(wa,sd,by="date")%>%
-  select(-WeatherDate)
+glimpse(wa)
 
 ```
+
+```{r}
+wd <- merge(wa,sd,by="date")
+
+
+```
+
+### MGD Average
+
+Taking out the demand that is not average MGD. Since the other data points are not demand we couldn't use them for a model.
+
+```{r}
+mgd_avg <- wd%>%
+  select(-avg_demand_cfs,
+         -avg_demand_af,
+         #-avg_demand_mgd, ## Target Variable
+         -max_demand_cfs,
+         -max_demand_af,
+         -max_demand_mgd,
+         -min_demand_cfs,
+         -min_demand_af,
+         -min_demand_mgd)%>%
+  select(-WeatherDate)
+  
+
+```
+
+> If we want to try to predict other vairables we can just uncomment avg_demand_mgd and comment out the one we want to predict for. Not sure if we want to do that though?
 
 # Split into Train and test
 
 ```{r}
 set.seed(6496)
 
-ti <- createDataPartition(wd$avg_demand_cfs, p=0.7,
+ti <- createDataPartition(mgd_avg$avg_demand_mgd, p=0.7,
                          list = FALSE)
 
 train <- wd[ti,]
@@ -101,4 +138,6 @@ test <- wd[-ti,]
 
 summary(train)
 ```
+
+
 
