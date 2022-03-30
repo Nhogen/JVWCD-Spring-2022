@@ -118,12 +118,35 @@ mgd_avg <- wd%>%
          -min_demand_cfs,
          -min_demand_af,
          -min_demand_mgd)%>%
-  select(-WeatherDate)
+  select(-WeatherDate,-ReadDate)
   
 
 ```
 
 > If we want to try to predict other vairables we can just uncomment avg_demand_mgd and comment out the one we want to predict for. Not sure if we want to do that though?
+
+### Add custom functions
+```{r}
+
+#Create function that will average 3 previous rows
+moving_avg_3_rows <- function(x){
+  (lag(x,3) + lag(x,2) + lag(x,1))/3
+}
+
+#Create function to calculate R^2
+rsq <- function (x, y) cor(x, y) ^ 2
+
+```
+
+### Add 3 day moving average column
+```{r}
+#Add column for 3 day average
+mgd_avg = mgd_avg %>% 
+  mutate(Prev3Day = ifelse(is.na(moving_avg_3_rows(Precipitation)),Precipitation,
+                           moving_avg_3_rows(Precipitation)))
+
+```
+
 
 # Split into Train and test
 
@@ -133,11 +156,33 @@ set.seed(6496)
 ti <- createDataPartition(mgd_avg$avg_demand_mgd, p=0.7,
                          list = FALSE)
 
-train <- wd[ti,]
-test <- wd[-ti,]
+train <- mgd_avg[ti,]
+test <- mgd_avg[-ti,]
 
-summary(train)
+mod3 <- lm(avg_demand_mgd ~., data=train)
+
+predictions <- mod3 %>% 
+  predict(test)
+
+compare <- data.frame(actual = test$avg_demand_mgd,
+                      predicted = predictions)
+
+error <- RMSE(predictions,test$avg_demand_mgd)
+rsq(compare$actual,compare$predicted)
+
 ```
+## To do
+
+models to create
+
+1. Log numeric variables -Zach
+2. Scale/center some variables -Jake
+3. Try to move all weather data a day or two back similar to what we did with rain - Nate
+4. Explore feature engineering ideas Jackson
+
+
+
+
 
 
 

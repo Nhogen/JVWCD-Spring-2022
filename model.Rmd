@@ -171,6 +171,18 @@ error <- RMSE(predictions,test$avg_demand_mgd)
 rsq(compare$actual,compare$predicted)
 
 ```
+## To do
+
+models to create
+
+1. Log numeric variables -Zach
+2. Scale/center some variables -Jake
+3. Try to move all weather data a day or two back similar to what we did with rain - Nate
+4. Explore feature engineering ideas Jackson
+
+
+
+
 
 
 
