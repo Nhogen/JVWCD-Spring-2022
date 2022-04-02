@@ -171,6 +171,111 @@ error <- RMSE(predictions,test$avg_demand_mgd)
 rsq(compare$actual,compare$predicted)
 
 ```
+## To do
+
+models to create
+
+1. Log numeric variables -Zach
+2. Scale/center some variables -Jake
+3. Try to move all weather data a day or two back similar to what we did with rain - Nate
+#Move Everything to PrevDay
+```{r}
+#View Model
+mod3 <- lm(avg_demand_mgd ~., data=mgd_avg)
+summary(mod3)
+
+#Change everything to Prevday
+PrevDayAll = shift.column(mgd_avg,columns =c('TemperatureMean',
+                                             'TemperatureMax',
+                                             'TemperatureMin',
+                                             'Precipitation',
+                                             'CoolingDegreeDays',
+                                             'SnowDepth',
+                                             'SnowFall',
+                                             'RainDays'),len = 1L,up=TRUE)
+
+#Remove unshifted columns
+PrevDayAll = PrevDayAll %>% 
+  select(-one_of('TemperatureMean',
+                 'TemperatureMax',
+                 'TemperatureMin',
+                 'Precipitation',
+                 'CoolingDegreeDays',
+                 'SnowDepth',
+                 'SnowFall',
+                 'RainDays'))
+
+#Rename Columns
+PrevDayAll = PrevDayAll %>% 
+  rename(PrevDayMeanTemp = TemperatureMean.Shifted,
+         PrevDayMaxTemp = TemperatureMax.Shifted,
+         PrevDayMinTemp = TemperatureMin.Shifted,
+         PrevDayRain = Precipitation.Shifted,
+         PrevDayCoolingDegDays = CoolingDegreeDays.Shifted,
+         PrevDaySnowDepth = SnowDepth.Shifted,
+         PrevDaySnowFall = SnowFall.Shifted,
+         PrevDayRainDay = RainDays.Shifted,)
+
+#run model again now
+modprev3 <- lm(avg_demand_mgd ~., data=PrevDayAll)
+summary(modprev3)
+
+#R2 is worse now?
+
+#I guess let's try a 3 day average of everything?
+
+```
+#3Day Average for all columns
+```{r}
+#3 Day average for everything (less snowfall, tempmin, tempmax, and CDD since they were not statistically significant)
+Avg3All = mgd_avg %>% 
+  mutate(Tempmean3Day = ifelse(is.na(moving_avg_3_rows(TemperatureMean)),TemperatureMean,
+                           moving_avg_3_rows(TemperatureMean)),
+         SnowDepth3Day = ifelse(is.na(moving_avg_3_rows(SnowDepth)),SnowDepth,
+                           moving_avg_3_rows(SnowDepth)))
+#Remove unaveraged columns
+Avg3All = Avg3All %>% 
+  select(-one_of('TemperatureMean',
+                 'TemperatureMax',
+                 'TemperatureMin',
+                 'Precipitation',
+                 'SnowDepth',
+                 'SnowFall'))
+
+summary(mod3)
+modAll3 <- lm(avg_demand_mgd ~., data=Avg3All)
+summary(modAll3)
+```
+
+```{r}
+#Split Test
+set.seed(6496)
+
+ti <- createDataPartition(Avg3All$avg_demand_mgd, p=0.7,
+                         list = FALSE)
+
+train <- Avg3All[ti,]
+test <- Avg3All[-ti,]
+
+modAll3 <- lm(avg_demand_mgd ~., data=Avg3All)
+
+predictions <- modAll3 %>% 
+  predict(test)
+
+compare <- data.frame(actual = test$avg_demand_mgd,
+                      predicted = predictions)
+
+error <- RMSE(predictions,test$avg_demand_mgd)
+rsq(compare$actual,compare$predicted)
+
+```
+
+
+4. Explore feature engineering ideas Jackson
+
+
+
+
 
 
 
