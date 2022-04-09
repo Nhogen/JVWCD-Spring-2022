@@ -1,7 +1,0 @@
-"0","sd%>%"
-"0","  group_by(CalendarYear)%>%"
-"0","  summarise(sum(hourly_demand))%>%"
-"0","  rename(Sum_of_demand = 'sum(hourly_demand)')%>%"
-"0","  ggplot(aes(CalendarYear, Sum_of_demand))+"
-"0","  geom_col()+"
-"0","  theme_minimal()"

@@ -1,5 +1,0 @@
-"0","ggplot(sd,aes(hourly_demand))+"
-"0","  geom_histogram()+"
-"0","  theme_minimal()"
-"2","`stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
-"

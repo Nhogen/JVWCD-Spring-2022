@@ -1,0 +1,7 @@
+"0","moving_avg_3_rows <- function(x){"
+"0","  (lag(x,3) + lag(x,2) + lag(x,1))/3"
+"0","}"
+"0","#ChangeDay"
+"0","#moving_avg_3_rows <- function(x){"
+"0","#  (lag(x,14) + lag(x,13) + lag(x,12) + lag(x,11) + lag(x,10) + lag(x,9) + lag(x,8) + lag(x,7) + lag(x,6) + lag(x,5) + lag(x,4) + lag(x,3) + lag(x,2) + lag(x,1))/14"
+"0","#}"
