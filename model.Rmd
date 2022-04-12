@@ -222,9 +222,7 @@ Avg3 = mgd_avg %>%
   mutate(Precip3Day = ifelse(is.na(moving_avg_3_rows(Precipitation)),Precipitation,
                            moving_avg_3_rows(Precipitation)),
          Tempmean3Day = ifelse(is.na(moving_avg_3_rows(TemperatureMean)),TemperatureMean,
-                           moving_avg_3_rows(TemperatureMean)),
-         SnowDepth3Day = ifelse(is.na(moving_avg_3_rows(SnowDepth)),SnowDepth,
-                           moving_avg_3_rows(SnowDepth)))%>% 
+                           moving_avg_3_rows(TemperatureMean)))%>% 
   select(-one_of('TemperatureMean',#Remove un averaged columns
                  'Precipitation',
                  'SnowDepth'))
@@ -315,8 +313,6 @@ cwdn1%>%
 corrplot(cwdn, tl.col="black", tl.pos = "lt", tl.cex = 0.7,cl.cex = .7, number.cex=.7, method = "number", order="AOE")
 ```
 
-
-
 # Split all datasets into Train and test
 
 ```{r}
@@ -327,8 +323,8 @@ set.seed(6496)
 ti <- createDataPartition(mgd_avg$avg_demand_mgd, p=0.7,
                          list = FALSE)
 
-train <- Avg3[ti,]
-test <- Avg3[-ti,]
+train <- mgd_avg[ti,]
+test <- mgd_avg[-ti,]
 
 
 #Avg3
@@ -372,20 +368,6 @@ summary(mod)
 mod_Avg3 <- lm(avg_demand_mgd ~., data=train_Avg3)
 
 summary(mod_Avg3)
-#Value with 1 day is 0.8726
-#Value with 2 day is 0.8872
-#Value with 3 day is 0.8979
-#Value with 4 day is 0.9056
-#Value with 5 day is 0.9106
-#Value with 6 day is 0.9145
-#Value with 7 day is 0.9158
-#Value with 8 day is 0.9163
-#Value with 9 day is 0.9167
-#Value with 10 day is 0.9159
-#Value with 11 day is 0.9145
-#Value with 12 day is 0.9136
-#Value with 13 day is 0.9126
-#Value with 14 day is 0.9121
 ```
 
 ## Model with all weather data looking at yesterday
@@ -455,6 +437,23 @@ mmetric(ttarg,trainpred,metrics_list)
 
 
 
+## Test mod
+
+```{r}
+predictions <- mod %>% 
+  predict(test)
+
+compare <- data.frame(actual = test$avg_demand_mgd,
+                      predicted = predictions)
+
+error <- RMSE(predictions,test$avg_demand_mgd)
+targ<-test$avg_demand_mgd
+mmetric(targ,predictions,metrics_list)
+
+
+```
+
+
 
 ## Test mod_Avg3
 
@@ -469,27 +468,25 @@ error <- RMSE(predictions,test_Avg3$avg_demand_mgd)
 targ<-test_Avg3$avg_demand_mgd
 mmetric(targ,predictions,metrics_list)
 
-#rsq(compare$actual,compare$predicted)
-
-#Value with 1 day is 0.8873063
-#Value with 2 day is 0.8950486
-#Value with 3 day is 0.9019893
-#Value with 4 day is 0.9035643
-#Value with 5 day is 0.9005719
-#Value with 6 day is 0.8981314
-#Value with 7 day is 0.9017859
-#Value with 8 day is 0.9048090
-#Value with 9 day is 0.9044366
-#Value with 10 day is 0.9031666
-#Value with 11 day is 0.9029562
-#Value with 12 day is 0.9010406
-#Value with 13 day is 0.8987119
-#Value with 14 day is 0.8988761
 
 ```
 
 
+## Test mod_PrevDayAll
 
+```{r}
+predictions <- mod_PrevDayAll %>% 
+  predict(test_PrevDayAll)
+
+compare <- data.frame(actual = test_PrevDayAll$avg_demand_mgd,
+                      predicted = predictions)
+
+error <- RMSE(predictions,test_PrevDayAll$avg_demand_mgd)
+targ<-test_PrevDayAll$avg_demand_mgd
+mmetric(targ,predictions,metrics_list)
+
+
+```
 
 > To summarize the model with the average of the last 3 days for those 3 variables performed the best of both the train and the test data.
 
