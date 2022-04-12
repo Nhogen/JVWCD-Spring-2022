@@ -1,0 +1,3 @@
+"0","#an attempt to manually look at the most important numeric vars"
+"0","cwdn <- cor(wdn, use=""pairwise.complete.obs"")"
+"0","cwdn1 <- data.frame(sort(cwdn[,'avg_demand_mgd'], decreasing = TRUE))"

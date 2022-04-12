@@ -1,0 +1,2 @@
+"0","wdn <- Avg3%>%"
+"0","  select_if(is.numeric)"
