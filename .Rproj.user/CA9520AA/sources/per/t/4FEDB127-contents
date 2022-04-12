@@ -87,6 +87,7 @@ sd <- read.csv("new_daily_demand.csv")%>%
          'min_demand_af' = 'Min.Daily.Demand..af.',
          'min_demand_mgd' = 'Min.Daily.Demand..mgd.')%>%#Clifton said this is a min
   mutate(date = as.Date(ReadDate,format="%m/%d/%Y"))
+
 summary(sd)
 ```
 
@@ -493,7 +494,10 @@ error <- RMSE(predictions,Avg3_2022$avg_demand_mgd)
 targ<-Avg3_2022$avg_demand_mgd
 mmetric(targ,predictions,metrics_list)
 ```
+```{r}
+summary(Avg3_2022)
 
+```
 
 
 ------------------------------------------------------------------------------
@@ -515,6 +519,16 @@ targ<-test$avg_demand_mgd
 mmetric(targ,predictions,metrics_list)
 
 
+
+predictions <- mod%>% 
+  predict(mgd_avg_2022)
+
+compare <- data.frame(actual = mgd_avg_2022$avg_demand_mgd,
+                      predicted = predictions)
+
+error <- RMSE(predictions,mgd_avg_2022$avg_demand_mgd)
+targ<-mgd_avg_2022$avg_demand_mgd
+mmetric(targ,predictions,metrics_list)
 ```
 
 
@@ -533,6 +547,16 @@ targ<-test_PrevDayAll$avg_demand_mgd
 mmetric(targ,predictions,metrics_list)
 
 
+
+predictions <- mod_PrevDayAll%>% 
+  predict(PrevDayAll_2022)
+
+compare <- data.frame(actual = PrevDayAll_2022$avg_demand_mgd,
+                      predicted = predictions)
+
+error <- RMSE(predictions, PrevDayAll_2022$avg_demand_mgd)
+targ<-PrevDayAll_2022$avg_demand_mgd
+mmetric(targ,predictions,metrics_list)
 ```
 
 > To summarize the model with the average of the last 3 days for those 3 variables performed the best of both the train and the test data.

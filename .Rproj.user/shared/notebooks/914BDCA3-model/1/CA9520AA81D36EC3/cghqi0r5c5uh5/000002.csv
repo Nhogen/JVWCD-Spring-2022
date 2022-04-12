@@ -1,0 +1,8 @@
+"0","Avg3 = mgd_avg %>% "
+"0","  mutate(Precip3Day = ifelse(is.na(moving_avg_3_rows(Precipitation)),Precipitation,"
+"0","                           moving_avg_3_rows(Precipitation)),"
+"0","         Tempmean3Day = ifelse(is.na(moving_avg_3_rows(TemperatureMean)),TemperatureMean,"
+"0","                           moving_avg_3_rows(TemperatureMean)))%>% "
+"0","  select(-one_of('TemperatureMean',#Remove un averaged columns"
+"0","                 'Precipitation',"
+"0","                 'SnowDepth'))"
