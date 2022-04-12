@@ -134,7 +134,7 @@ mgd_avg <- wd%>%
 
 ```{r}
 moving_avg_3_rows <- function(x){
-  (lag(x,3) + lag(x,2) + lag(x,1))/3
+  lag(x,4) + (lag(x,3) + lag(x,2) + lag(x,1))/4
 }
 #ChangeDay
 #moving_avg_3_rows <- function(x){
@@ -305,8 +305,8 @@ cwdn1 <- data.frame(sort(cwdn[,'avg_demand_mgd'], decreasing = TRUE))
 
 ```{r}
 cwdn1%>%
-  rename(Correlation = "sort.cwdn....avg_demand_mgd....decreasing...TRUE.")%>%
-  kable()
+  rename(Correlation = "sort.cwdn....avg_demand_mgd....decreasing...TRUE.")#%>%
+  #kable()
 
 ```
 
@@ -347,21 +347,16 @@ ti2 <- createDataPartition(PrevDayAll$avg_demand_mgd, p=0.7,
 train_PrevDayAll <- PrevDayAll[ti2,]
 test_PrevDayAll <- PrevDayAll[-ti2,]
 
+
+metrics_list = c("R2","MAE","MAPE","RMSE")
+
 ```
 
 
 
 # Models
 
-models to create
-
-1. Log numeric variables -Zach
-2. Scale/center some variables -Jake
-3. Try to move all weather data a day or two back similar to what we did with rain - Nate
-
 ## Model with our standard transformations
-
-### Train
 
 ```{r}
 mod <- lm(avg_demand_mgd ~., data=train)
@@ -370,32 +365,98 @@ summary(mod)
 
 > It is clear from this model that Precip3Day was a much more useful predictor than perciprition alone because it was more statistcally significant and had a more dramatic coeficient. This makes sense because 261 weeks in the year had rainfall so it seems as though it would have a large impact.
 
-### Test
-
-```{r}
-predictions <- mod%>% 
-  predict(test)
-
-compare <- data.frame(actual = test$avg_demand_mgd,
-                      predicted = predictions)
-
-error <- RMSE(predictions,test$avg_demand_mgd)
-
-rsq(compare$actual,compare$predicted)
-
-```
 
 ## Model with Average 3 days
-
-### Train Avg3
 
 ```{r}
 mod_Avg3 <- lm(avg_demand_mgd ~., data=train_Avg3)
 
 summary(mod_Avg3)
+#Value with 1 day is 0.8726
+#Value with 2 day is 0.8872
+#Value with 3 day is 0.8979
+#Value with 4 day is 0.9056
+#Value with 5 day is 0.9106
+#Value with 6 day is 0.9145
+#Value with 7 day is 0.9158
+#Value with 8 day is 0.9163
+#Value with 9 day is 0.9167
+#Value with 10 day is 0.9159
+#Value with 11 day is 0.9145
+#Value with 12 day is 0.9136
+#Value with 13 day is 0.9126
+#Value with 14 day is 0.9121
 ```
 
-### Test Avg3
+## Model with all weather data looking at yesterday
+
+```{r}
+mod_PrevDayAll <- lm(avg_demand_mgd ~., data=train_PrevDayAll)
+summary(mod_PrevDayAll)
+```
+
+
+# Model Selection
+
+## Performance Metrics
+
+R2 : Tells us that the predictor variables in the model are able to explain x% of the variation in target variable.
+
+MAE: Is to subtract our predicted value and actual value at each time point to obtain the absolute value, and then average it out.
+
+RMSE: tells us the average deviation between the predicted demand made by the model and the actual demand value.
+
+MAPE: returns error as a percentage, making it easy to understand:
+MAPE	Interpretation
+' < 10 %	Very good
+' 10 % - 20 %	Good
+' 20 % - 50 %	OK
+' > 50 %	Not good
+
+```{r}
+set.seed(6496)
+
+#mod
+trainpred <- mod%>% 
+  predict(train)
+
+compare <- data.frame(actual = train$avg_demand_mgd,
+                      predicted = trainpred)
+
+error <- RMSE(trainpred,train$avg_demand_mgd)
+ttarg<-train$avg_demand_mgd
+mmetric(ttarg,trainpred,metrics_list)
+
+#mod_Avg3
+trainpred <- mod_Avg3 %>% 
+  predict(train_Avg3)
+
+compare <- data.frame(actual = train_Avg3$avg_demand_mgd,
+                      predicted = trainpred)
+
+error <- RMSE(trainpred,train_Avg3$avg_demand_mgd)
+ttarg<-train_Avg3$avg_demand_mgd
+mmetric(ttarg,trainpred,metrics_list)
+
+#mod_PrevDayAll
+trainpred <- mod_PrevDayAll%>% 
+  predict(train_PrevDayAll)
+
+compare <- data.frame(actual = train_PrevDayAll$avg_demand_mgd,
+                      predicted = trainpred)
+
+error <- RMSE(trainpred,train_PrevDayAll$avg_demand_mgd)
+ttarg<-train_PrevDayAll$avg_demand_mgd
+mmetric(ttarg,trainpred,metrics_list)
+```
+
+> R2 : mod_Avg3 wins this one as you want the higest possible value
+> MAE : 
+
+
+
+
+## Test mod_Avg3
 
 ```{r}
 predictions <- mod_Avg3 %>% 
@@ -405,51 +466,53 @@ compare <- data.frame(actual = test_Avg3$avg_demand_mgd,
                       predicted = predictions)
 
 error <- RMSE(predictions,test_Avg3$avg_demand_mgd)
-rsq(compare$actual,compare$predicted)
+targ<-test_Avg3$avg_demand_mgd
+mmetric(targ,predictions,metrics_list)
 
-#Value with 1 day is 0.8821361
-#Value with 2 day is 0.8898740
-#Value with 3 day is 0.8968115
-#Value with 4 day is 0.8968564
-#Value with 5 day is 0.8933539
-#Value with 6 day is 0.8908162
-#Value with 7 day is 0.8930895
-#Value with 8 day is 0.8951116
-#Value with 9 day is 0.8942761
-#Value with 10 day is 0.8927353
-#Value with 11 day is 0.8925998
-#Value with 12 day is 0.8906925
-#Value with 13 day is 0.8905605
-#Value with 14 day is 0.8901907
+#rsq(compare$actual,compare$predicted)
+
+#Value with 1 day is 0.8873063
+#Value with 2 day is 0.8950486
+#Value with 3 day is 0.9019893
+#Value with 4 day is 0.9035643
+#Value with 5 day is 0.9005719
+#Value with 6 day is 0.8981314
+#Value with 7 day is 0.9017859
+#Value with 8 day is 0.9048090
+#Value with 9 day is 0.9044366
+#Value with 10 day is 0.9031666
+#Value with 11 day is 0.9029562
+#Value with 12 day is 0.9010406
+#Value with 13 day is 0.8987119
+#Value with 14 day is 0.8988761
 
 ```
 
-## Model with all weather data looking at yesterday
 
-### Train PrevDay
-
-```{r}
-mod_PrevDayAll <- lm(avg_demand_mgd ~., data=train_PrevDayAll)
-summary(mod_PrevDayAll)
-```
-
-### Test PrevDay
-
-```{r}
-predictions <- mod_PrevDayAll%>% 
-  predict(test_PrevDayAll)
-
-compare <- data.frame(actual = test_PrevDayAll$avg_demand_mgd,
-                      predicted = predictions)
-
-error <- RMSE(predictions,test_PrevDayAll$avg_demand_mgd)
-rsq(compare$actual,compare$predicted)
-```
 
 
 > To summarize the model with the average of the last 3 days for those 3 variables performed the best of both the train and the test data.
 
 
+```{r}
+#rsq(compare$actual,compare$predicted)
+
+#Value with 1 day is 0.8873063
+#Value with 2 day is 0.8950486
+#Value with 3 day is 0.9019893
+#Value with 4 day is 0.9035643
+#Value with 5 day is 0.9005719
+#Value with 6 day is 0.8981314
+#Value with 7 day is 0.9017859
+#Value with 8 day is 0.9048090
+#Value with 9 day is 0.9044366
+#Value with 10 day is 0.9031666
+#Value with 11 day is 0.9029562
+#Value with 12 day is 0.9010406
+#Value with 13 day is 0.8987119
+#Value with 14 day is 0.8988761
+
+```
 
 
 
