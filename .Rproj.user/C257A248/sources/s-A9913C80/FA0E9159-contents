@@ -34,7 +34,8 @@ list.of.packages <- c("tidyverse",
                       "ISOweek",
                       "kableExtra",
                       "matrixStats",
-                      "rminer")
+                      "rminer",
+                      "mltools")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
@@ -51,6 +52,7 @@ library(ISOweek)
 library(kableExtra)
 library(matrixStats)
 library(rminer)
+library(mltools)
 ```
 
 ## Read CSV files and pre process
@@ -59,16 +61,15 @@ library(rminer)
 
 ```{r}
 wa <- read.csv("new_weather_slc_airport.csv")%>%
-  mutate(season = ifelse(CalendarMonth %in% c('03','04','05'), 'Spring',
-                         ifelse(CalendarMonth %in% c('06','07','08'), 'Summer',
-                                ifelse(CalendarMonth %in% c('09','10','11'), 'Fall',
-                                       ifelse(CalendarMonth %in% c('12','01','02'), 'Winter','0')))),
+  mutate(season = ifelse(CalendarMonth %in% c('3','4','5'), 'Spring',
+                         ifelse(CalendarMonth %in% c('6','7','8'), 'Summer',
+                                ifelse(CalendarMonth %in% c('9','10','11'), 'Fall',
+                                       ifelse(CalendarMonth %in% c('12','1','2'), 'Winter','0')))),
          #RainDays = factor(RainDays),
-         date = as.Date(WeatherDate,format="%m/%d/%Y"))%>%
+         date = as.Date(WeatherDate,format="%m/%d/%Y"),
+         RainDays = ifelse(Precipitation < 0.05, 0 , RainDays),
+         Precipitation = ifelse(Precipitation < 0.05, 0 , Precipitation))%>%
   filter(CalendarYear>=2020)
-
-glimpse(wa)
-summary(wa)
 ```
 
 ### System Demand Data
@@ -86,8 +87,6 @@ sd <- read.csv("new_daily_demand.csv")%>%
          'min_demand_mgd' = 'Max.Daily.Demand..mgd..1')%>%#Clifton said this is a min
   mutate(date = as.Date(ReadDate,format="%m/%d/%Y"))
 
-glimpse(sd)
-summary(sd)
 ```
 
 > CFS (cubic feet per second) – This is a measurement of flow at a given point. It represents how many cubic feet pass a point in each second. For example, if you have an average of 30 cfs at 1 p.m., that means that during that hour, an average of 30 cubic feet was passing the point each second.
@@ -150,6 +149,30 @@ rsq <- function (x, y) cor(x, y) ^ 2
 
 ```
 
+## Add Rain Week Variable
+
+```{r}
+rainwk <- mgd_avg %>%
+  mutate(Week_no = format(date, "%U"))%>%
+  group_by(Week_no)%>%
+  summarize(RainWeek = as.factor(ifelse(sum(RainDays)>0,1,0)))
+
+mgd_avg <- mgd_avg %>%
+  mutate(Week_no = as.factor(format(date, "%U")),
+         RainDays = as.factor(RainDays),
+         season = as.factor(season))
+
+mgd_avg <- dplyr::left_join(mgd_avg,rainwk,by="Week_no")
+
+mgd_avg <- mgd_avg%>% select(-Week_no)
+
+
+
+
+glimpse(mgd_avg)
+summary(mgd_avg)
+```
+
 # Create 3 Datasets to try different models
 
 ## Move Everything to PrevDay
@@ -191,27 +214,8 @@ glimpse(PrevDayAll)
 summary(PrevDayAll)
 ```
 
-## Add Rain Week Variable
 
-```{r}
-rainwk <- mgd_avg %>%
-  mutate(Week_no = format(date, "%U"))%>%
-  group_by(Week_no)%>%
-  summarize(RainWeek = as.factor(ifelse(sum(RainDays)>0,1,0)))
-
-mgd_avg <- mgd_avg %>%
-  mutate(Week_no = as.factor(format(date, "%U")))
-
-mgd_avg <- dplyr::left_join(mgd_avg,rainwk,by="Week_no")
-
-mgd_avg <- mgd_avg%>% select(-Week_no)
-
-
-glimpse(mgd_avg)
-summary(mgd_avg)
-```
-
-## Add 3 day moving average column
+## Add 3 day moving average columns
 
 ```{r}
 Avg3 = mgd_avg %>% 
@@ -284,6 +288,34 @@ PrevDayAll <- PrevDayAll%>%
 > I did try factoring a week number variable and this made the model overfit with a very high R^2 score on both train and test. I beleive this is because we only had one year of data.
 
 > I found that removing these varibles actually improved model performance.
+
+
+# Corrplots
+
+```{r}
+wdn <- Avg3%>%
+  select_if(is.numeric)
+```
+
+```{r}
+#an attempt to manually look at the most important numeric vars
+cwdn <- cor(wdn, use="pairwise.complete.obs")
+cwdn1 <- data.frame(sort(cwdn[,'avg_demand_mgd'], decreasing = TRUE))
+```
+
+```{r}
+cwdn1%>%
+  rename(Correlation = "sort.cwdn....avg_demand_mgd....decreasing...TRUE.")%>%
+  kable()
+
+```
+
+```{r}
+# Correlation of numeric variables with their numbers and shap/color relation to sale price
+corrplot(cwdn, tl.col="black", tl.pos = "lt", tl.cex = 0.7,cl.cex = .7, number.cex=.7, method = "number", order="AOE")
+```
+
+
 
 # Split all datasets into Train and test
 
@@ -361,6 +393,20 @@ rsq(compare$actual,compare$predicted)
 mod_Avg3 <- lm(avg_demand_mgd ~., data=train_Avg3)
 
 summary(mod_Avg3)
+#Value with 1 day is 0.8726
+#Value with 2 day is 0.8872
+#Value with 3 day is 0.8979
+#Value with 4 day is 0.9056
+#Value with 5 day is 0.9106
+#Value with 6 day is 0.9145
+#Value with 7 day is 0.9158
+#Value with 8 day is 0.9163
+#Value with 9 day is 0.9167
+#Value with 10 day is 0.9159
+#Value with 11 day is 0.9145
+#Value with 12 day is 0.9136
+#Value with 13 day is 0.9126
+#Value with 14 day is 0.9121
 ```
 
 ### Test Avg3
@@ -375,20 +421,20 @@ compare <- data.frame(actual = test_Avg3$avg_demand_mgd,
 error <- RMSE(predictions,test_Avg3$avg_demand_mgd)
 rsq(compare$actual,compare$predicted)
 
-#Value with 1day is 0.8821361
-#Value with 2day is 0.8898740
-#Value with 3day is 0.8968115
-#Value with 4day is 0.8968564
-#Value with 5day is 0.8933539
-#Value with 6day is 0.8908162
-#Value with 7day is 0.8930895
-#Value with 8day is 0.8951116
-#Value with 9day is 0.8942761
-#Value with 10dayis 0.8927353
-#Value with 11dayis 0.8925998
-#Value with 12dayis 0.8906925
-#Value with 13dayis 0.8905605
-#Value with 14dayis 0.8901907
+#Value with 1 day is 0.8873063
+#Value with 2 day is 0.8950486
+#Value with 3 day is 0.9019893
+#Value with 4 day is 0.9035643
+#Value with 5 day is 0.9005719
+#Value with 6 day is 0.8981314
+#Value with 7 day is 0.9017859
+#Value with 8 day is 0.9048090
+#Value with 9 day is 0.9044366
+#Value with 10 day is 0.9031666
+#Value with 11 day is 0.9029562
+#Value with 12 day is 0.9010406
+#Value with 13 day is 0.8987119
+#Value with 14 day is 0.8988761
 
 ```
 
@@ -416,6 +462,16 @@ rsq(compare$actual,compare$predicted)
 
 
 > To summarize the model with the average of the last 3 days for those 3 variables performed the best of both the train and the test data.
+
+
+
+
+
+
+
+
+
+
 
 
 
