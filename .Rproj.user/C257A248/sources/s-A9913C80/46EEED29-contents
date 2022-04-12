@@ -1,0 +1,62 @@
+```{r}
+#Space for creating different levels
+#moving_avg_3_rows <- function(x){
+#  (lag(x,3) + lag(x,2) + lag(x,1))/3
+#}
+#ChangeDay
+moving_avg_3_rows <- function(x){
+  (lag(x,14) + lag(x,13) + lag(x,12) + lag(x,11) + lag(x,10) + lag(x,9) + lag(x,8) + lag(x,7) + lag(x,6) + lag(x,5) + lag(x,4) + lag(x,3) + lag(x,2) + lag(x,1))/14
+}
+
+
+Avg3 = mgd_avg %>% 
+  mutate(Precip3Day = ifelse(is.na(moving_avg_3_rows(Precipitation)),Precipitation,
+                             moving_avg_3_rows(Precipitation)),
+         Tempmean3Day = ifelse(is.na(moving_avg_3_rows(TemperatureMean)),TemperatureMean,
+                               moving_avg_3_rows(TemperatureMean)),
+         SnowDepth3Day = ifelse(is.na(moving_avg_3_rows(SnowDepth)),SnowDepth,
+                                moving_avg_3_rows(SnowDepth)))%>% 
+  select(-one_of('TemperatureMean',#Remove un averaged columns
+                 'Precipitation',
+                 'SnowDepth'))
+
+set.seed(6496)
+
+#mgd_avg
+
+ti <- createDataPartition(mgd_avg$avg_demand_mgd, p=0.7,
+                          list = FALSE)
+
+train <- Avg3[ti,]
+test <- Avg3[-ti,]
+
+
+#Avg3
+
+ti1 <- createDataPartition(Avg3$avg_demand_mgd, p=0.7,
+                           list = FALSE)
+
+train_Avg3 <- Avg3[ti1,]
+test_Avg3 <- Avg3[-ti1,]
+
+#PrevDayAll
+
+ti2 <- createDataPartition(PrevDayAll$avg_demand_mgd, p=0.7,
+                           list = FALSE)
+
+train_PrevDayAll <- PrevDayAll[ti2,]
+test_PrevDayAll <- PrevDayAll[-ti2,]
+
+metrics_list = c("R2","MAE","MAPE","RAE","RMSE","RMSPE","RRSE")
+
+predictions <- mod_Avg3 %>% 
+  predict(test_Avg3)
+
+compare <- data.frame(actual = test_Avg3$avg_demand_mgd,
+                      predicted = predictions)
+
+error <- RMSE(predictions,test_Avg3$avg_demand_mgd)
+targ<-test_Avg3$avg_demand_mgd
+mmetric(targ,predictions,metrics_list)
+
+```

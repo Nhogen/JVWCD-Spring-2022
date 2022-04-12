@@ -304,9 +304,9 @@ cwdn1 <- data.frame(sort(cwdn[,'avg_demand_mgd'], decreasing = TRUE))
 ```
 
 ```{r}
-cwdn1%>%
-  rename(Correlation = "sort.cwdn....avg_demand_mgd....decreasing...TRUE.")%>%
-  kable()
+#cwdn1%>%
+#  rename(Correlation = "sort.cwdn....avg_demand_mgd....decreasing...TRUE.")%>%
+#  kable()
 
 ```
 
@@ -412,6 +412,20 @@ summary(mod_Avg3)
 ### Test Avg3
 
 ```{r}
+metrics_list = c("R2","MAE","MAPE","RAE","RMSE","RMSPE","RRSE")
+
+trainpred <- mod_Avg3 %>% 
+  predict(train_Avg3)
+
+compare <- data.frame(actual = train_Avg3$avg_demand_mgd,
+                      predicted = trainpred)
+
+error <- RMSE(trainpred,train_Avg3$avg_demand_mgd)
+ttarg<-train_Avg3$avg_demand_mgd
+mmetric(ttarg,trainpred,metrics_list)
+
+
+
 predictions <- mod_Avg3 %>% 
   predict(test_Avg3)
 
@@ -419,6 +433,9 @@ compare <- data.frame(actual = test_Avg3$avg_demand_mgd,
                       predicted = predictions)
 
 error <- RMSE(predictions,test_Avg3$avg_demand_mgd)
+targ<-test_Avg3$avg_demand_mgd
+mmetric(targ,predictions,metrics_list)
+
 rsq(compare$actual,compare$predicted)
 
 #Value with 1 day is 0.8873063
@@ -437,6 +454,7 @@ rsq(compare$actual,compare$predicted)
 #Value with 14 day is 0.8988761
 
 ```
+
 
 ## Model with all weather data looking at yesterday
 
