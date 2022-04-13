@@ -1,5 +1,5 @@
 ---
-title: "Model"
+title: "Final Model"
 author: "JVWCD Capstone Group"
 date: "3/29/2022"
 output: 
@@ -172,47 +172,6 @@ glimpse(mgd_avg)
 summary(mgd_avg)
 ```
 
-# Create 3 Datasets to try different models
-
-## Move Everything to PrevDay
-
-```{r}
-#Change everything to Prevday
-PrevDayAll = shift.column(mgd_avg,columns =c('TemperatureMean',
-                                             'TemperatureMax',
-                                             'TemperatureMin',
-                                             'Precipitation',
-                                             'CoolingDegreeDays',
-                                             'SnowDepth',
-                                             'SnowFall',
-                                             'RainDays'),len = 1L,up=TRUE)
-
-#Remove unshifted columns
-PrevDayAll = PrevDayAll %>% 
-  select(-one_of('TemperatureMean',
-                 'TemperatureMax',
-                 'TemperatureMin',
-                 'Precipitation',
-                 'CoolingDegreeDays',
-                 'SnowDepth',
-                 'SnowFall',
-                 'RainDays'))
-
-#Rename Columns
-PrevDayAll = PrevDayAll %>% 
-  rename(PrevDayMeanTemp = TemperatureMean.Shifted,
-         PrevDayMaxTemp = TemperatureMax.Shifted,
-         PrevDayMinTemp = TemperatureMin.Shifted,
-         PrevDayRain = Precipitation.Shifted,
-         PrevDayCoolingDegDays = CoolingDegreeDays.Shifted,
-         PrevDaySnowDepth = SnowDepth.Shifted,
-         PrevDaySnowFall = SnowFall.Shifted,
-         PrevDayRainDay = RainDays.Shifted,)
-
-glimpse(PrevDayAll)
-summary(PrevDayAll)
-```
-
 
 ## Add 3 day moving average columns
 
@@ -243,6 +202,8 @@ Avg3 <- Avg3%>%
 glimpse(Avg3)
 summary(Avg3)
 ```
+
+
 > Here we took the 3 day average of some of the most interesting variables per our EDA. We used 0.05 as our benchmark for statistically significant. 
 
 ##  Variable choice methodology
@@ -266,26 +227,6 @@ It's correlation to our tarter variable was positive with a score of 0.5495006. 
 ## Remove Calendar Variables from Datasets to see how model performance if affected.
 
 ```{r}
-#mgd_avg
-mgd_avg_2022 <- mgd_avg%>% 
-  filter(CalendarYear == 2022)%>%
-  select(-date,
-         -CalendarYear,
-         #-CalendarMonth,
-         -CalendarDay)%>%
-  mutate(season = as.factor(season))
-
-mgd_avg <- mgd_avg%>%
-  filter(CalendarYear != 2022)%>%
-  select(-date,
-         -CalendarYear,
-         -CalendarMonth,
-         -CalendarDay)%>%
-  mutate(season = as.factor(season))
-
-
-  
-#
 Avg3_2022 <- Avg3%>% 
   filter(CalendarYear == 2022)%>%
   select(-date,
@@ -301,25 +242,6 @@ Avg3 <- Avg3%>%
          -CalendarMonth,
          -CalendarDay)%>%
   mutate(season = as.factor(season))
-
-
-
-
-PrevDayAll_2022 <- PrevDayAll%>%
-  filter(CalendarYear == 2022)%>%
-  select(-date,
-         -CalendarYear,
-         -CalendarMonth,
-         -CalendarDay)%>%
-  mutate(season = as.factor(season))
-
-PrevDayAll <- PrevDayAll%>%
-  filter(CalendarYear != 2022)%>%
-  select(-date,
-         -CalendarYear,
-         -CalendarMonth,
-         -CalendarDay)%>%
-  mutate(season = as.factor(season))
 ```
 
 > I wanted to try removing these variables because it felt more consistant with our goal of predicting water demand based on weather data. 
@@ -329,44 +251,11 @@ PrevDayAll <- PrevDayAll%>%
 > I found that removing these varibles actually improved model performance.
 
 
-# Corrplots
-
-```{r}
-wdn <- Avg3%>%
-  select_if(is.numeric)
-```
-
-```{r}
-#an attempt to manually look at the most important numeric vars
-cwdn <- cor(wdn, use="pairwise.complete.obs")
-cwdn1 <- data.frame(sort(cwdn[,'avg_demand_mgd'], decreasing = TRUE))
-```
-
-```{r}
-cwdn1%>%
-  rename(Correlation = "sort.cwdn....avg_demand_mgd....decreasing...TRUE.")#%>%
-  #kable()
-
-```
-
-```{r}
-# Correlation of numeric variables with their numbers and shap/color relation to sale price
-corrplot(cwdn, tl.col="black", tl.pos = "lt", tl.cex = 0.7,cl.cex = .7, number.cex=.7, method = "number", order="AOE")
-```
 
 # Split all datasets into Train and test
 
 ```{r}
 set.seed(6496)
-
-#mgd_avg
-
-ti <- createDataPartition(mgd_avg$avg_demand_mgd, p=0.7,
-                         list = FALSE)
-
-train <- mgd_avg[ti,]
-test <- mgd_avg[-ti,]
-
 
 #Avg3
 
@@ -376,32 +265,10 @@ ti1 <- createDataPartition(Avg3$avg_demand_mgd, p=0.7,
 train_Avg3 <- Avg3[ti1,]
 test_Avg3 <- Avg3[-ti1,]
 
-#PrevDayAll
-
-ti2 <- createDataPartition(PrevDayAll$avg_demand_mgd, p=0.7,
-                         list = FALSE)
-
-train_PrevDayAll <- PrevDayAll[ti2,]
-test_PrevDayAll <- PrevDayAll[-ti2,]
-
-
 metrics_list = c("R2","MAE","MAPE","RMSE")
-
 ```
-
-
 
 # Models
-
-## Model with our standard transformations
-
-```{r}
-mod <- lm(log(avg_demand_mgd) ~ . + log(Tempmean3Day), data=train)
-summary(mod)
-```
-
-> It is clear from this model that Precip3Day was a much more useful predictor than perciprition alone because it was more statistcally significant and had a more dramatic coeficient. This makes sense because 261 weeks in the year had rainfall so it seems as though it would have a large impact.
-
 
 ## Model with Average 4 days
 
@@ -410,14 +277,6 @@ mod_Avg3 <- lm(avg_demand_mgd ~., data=train_Avg3)
 
 summary(mod_Avg3)
 ```
-
-## Model with all weather data looking at yesterday
-
-```{r}
-mod_PrevDayAll <- lm(avg_demand_mgd ~., data=train_PrevDayAll)
-summary(mod_PrevDayAll)
-```
-
 
 # Model Selection
 
@@ -439,17 +298,6 @@ MAPE	Interpretation
 ```{r}
 set.seed(6496)
 
-#mod
-trainpred <- mod%>% 
-  predict(train)
-
-compare <- data.frame(actual = train$avg_demand_mgd,
-                      predicted = trainpred)
-
-error <- RMSE(trainpred,train$avg_demand_mgd)
-ttarg<-train$avg_demand_mgd
-mmetric(ttarg,trainpred,metrics_list)
-
 #mod_Avg3
 trainpred <- mod_Avg3 %>% 
   predict(train_Avg3)
@@ -459,17 +307,6 @@ compare <- data.frame(actual = train_Avg3$avg_demand_mgd,
 
 error <- RMSE(trainpred,train_Avg3$avg_demand_mgd)
 ttarg<-train_Avg3$avg_demand_mgd
-mmetric(ttarg,trainpred,metrics_list)
-
-#mod_PrevDayAll
-trainpred <- mod_PrevDayAll%>% 
-  predict(train_PrevDayAll)
-
-compare <- data.frame(actual = train_PrevDayAll$avg_demand_mgd,
-                      predicted = trainpred)
-
-error <- RMSE(trainpred,train_PrevDayAll$avg_demand_mgd)
-ttarg<-train_PrevDayAll$avg_demand_mgd
 mmetric(ttarg,trainpred,metrics_list)
 ```
 
@@ -511,97 +348,3 @@ mmetric(targ,predictions,metrics_list)
 summary(Avg3_2022)
 
 ```
-
-
-------------------------------------------------------------------------------
-
-
-
-
-## Test mod
-
-```{r}
-predictions <- mod %>% 
-  predict(test)
-
-compare <- data.frame(actual = test$avg_demand_mgd,
-                      predicted = predictions)
-
-error <- RMSE(predictions,test$avg_demand_mgd)
-targ<-test$avg_demand_mgd
-mmetric(targ,predictions,metrics_list)
-
-
-
-predictions <- mod%>% 
-  predict(mgd_avg_2022)
-
-compare <- data.frame(actual = mgd_avg_2022$avg_demand_mgd,
-                      predicted = predictions)
-
-error <- RMSE(predictions,mgd_avg_2022$avg_demand_mgd)
-targ<-mgd_avg_2022$avg_demand_mgd
-mmetric(targ,predictions,metrics_list)
-```
-
-
-
-## Test mod_PrevDayAll
-
-```{r}
-predictions <- mod_PrevDayAll %>% 
-  predict(test_PrevDayAll)
-
-compare <- data.frame(actual = test_PrevDayAll$avg_demand_mgd,
-                      predicted = predictions)
-
-error <- RMSE(predictions,test_PrevDayAll$avg_demand_mgd)
-targ<-test_PrevDayAll$avg_demand_mgd
-mmetric(targ,predictions,metrics_list)
-
-
-
-predictions <- mod_PrevDayAll%>% 
-  predict(PrevDayAll_2022)
-
-compare <- data.frame(actual = PrevDayAll_2022$avg_demand_mgd,
-                      predicted = predictions)
-
-error <- RMSE(predictions, PrevDayAll_2022$avg_demand_mgd)
-targ<-PrevDayAll_2022$avg_demand_mgd
-mmetric(targ,predictions,metrics_list)
-```
-
-> To summarize the model with the average of the last 3 days for those 3 variables performed the best of both the train and the test data.
-
-
-```{r}
-#rsq(compare$actual,compare$predicted)
-
-#Value with 1 day is 0.8873063
-#Value with 2 day is 0.8950486
-#Value with 3 day is 0.9019893
-#Value with 4 day is 0.9035643
-#Value with 5 day is 0.9005719
-#Value with 6 day is 0.8981314
-#Value with 7 day is 0.9017859
-#Value with 8 day is 0.9048090
-#Value with 9 day is 0.9044366
-#Value with 10 day is 0.9031666
-#Value with 11 day is 0.9029562
-#Value with 12 day is 0.9010406
-#Value with 13 day is 0.8987119
-#Value with 14 day is 0.8988761
-
-```
-
-
-
-
-
-
-
-
-
-
-

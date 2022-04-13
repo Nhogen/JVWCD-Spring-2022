@@ -1,0 +1,3 @@
+"0","mod <- lm(log(avg_demand_mgd) ~ . + log(Tempmean3Day), data=train)"
+"2","Error in eval(predvars, data, env) : object 'Tempmean3Day' not found
+"

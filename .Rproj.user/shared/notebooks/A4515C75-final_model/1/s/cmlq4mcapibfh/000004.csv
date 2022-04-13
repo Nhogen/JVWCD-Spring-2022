@@ -1,0 +1,4 @@
+"0","mod <- lm(log(avg_demand_mgd) ~ . + log(Tempmean3Day), data=train)"
+"2","Error in model.frame.default(formula = log(avg_demand_mgd) ~ . + log(Tempmean3Day),  : 
+  'data' must be a data.frame, environment, or list
+"

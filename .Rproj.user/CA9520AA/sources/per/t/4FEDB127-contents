@@ -225,8 +225,18 @@ Avg3 = mgd_avg %>%
   select(-one_of('TemperatureMean',#Remove un averaged columns
                  'Precipitation',
                  'SnowDepth'))
+
+glimpse(Avg3)
 ```
 
+## Log Numeric Variables
+
+```{r}
+Avg3 <- Avg3%>%
+  mutate(TemperatureMax = log(TemperatureMax))
+  
+
+```
 
 
 ```{r}
@@ -261,7 +271,7 @@ mgd_avg_2022 <- mgd_avg%>%
   filter(CalendarYear == 2022)%>%
   select(-date,
          -CalendarYear,
-         -CalendarMonth,
+         #-CalendarMonth,
          -CalendarDay)%>%
   mutate(season = as.factor(season))
 
@@ -291,6 +301,9 @@ Avg3 <- Avg3%>%
          -CalendarMonth,
          -CalendarDay)%>%
   mutate(season = as.factor(season))
+
+
+
 
 PrevDayAll_2022 <- PrevDayAll%>%
   filter(CalendarYear == 2022)%>%
@@ -383,7 +396,7 @@ metrics_list = c("R2","MAE","MAPE","RMSE")
 ## Model with our standard transformations
 
 ```{r}
-mod <- lm(avg_demand_mgd ~., data=train)
+mod <- lm(log(avg_demand_mgd) ~ . + log(Tempmean3Day), data=train)
 summary(mod)
 ```
 
