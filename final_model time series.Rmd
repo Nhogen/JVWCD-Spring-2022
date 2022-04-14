@@ -191,20 +191,79 @@ Avg3 = mgd_avg %>%
 glimpse(Avg3)
 ```
 
-## Log Numeric Variables
 
+2020 Regression Model to Predict 2021 Data as a simple test
 ```{r}
-Avg3 <- Avg3%>%
-  mutate(TemperatureMax = log(TemperatureMax))
-  
+# gather 2020 data
+data2020 <- Avg3 %>% 
+  filter(CalendarYear==2020) %>% 
+  select(-date,
+         -CalendarYear,
+         -CalendarMonth,
+         -CalendarDay)%>%
+  mutate(season = as.factor(season))
+summary(data2020)
 
+#2020 model
+mod2020 <- lm(avg_demand_mgd~., data = data2020)
+summary(mod2020)
+
+# gather 2021 data
+data2021 <- Avg3 %>% 
+  filter(CalendarYear==2021) %>% 
+  select(-date,
+         -CalendarYear,
+         -CalendarMonth,
+         -CalendarDay)%>%
+  mutate(season = as.factor(season))
+summary(data2021)
+
+# 2021 predictions
+
+pred <- predict(mod2020, data2021)
+
+# metrics
+compare <- data.frame(actual = data2021$avg_demand_mgd,
+                      predicted = pred)
+compare
+
+error <- RMSE(pred,data2021$avg_demand_mgd)
+error
+
+ttarg<-data2021$avg_demand_mgd
+metrics_list = c("R2","MAE","MAPE","RMSE")
+mmetric(ttarg,pred,metrics_list)
+
+# gather q1 2021 data
+JFMA <- Avg3 %>% 
+  filter(CalendarYear == 2021) %>% 
+  filter(CalendarMonth == 1 | CalendarMonth == 2 | CalendarMonth == 3 | CalendarMonth == 4) %>%
+  select(-date,
+         -CalendarYear,
+         -CalendarMonth,
+         -CalendarDay)%>%
+  mutate(season = as.factor(season))
+summary(JFMA)
+
+# predictions on q1 2021 data
+JFMApred <- predict(mod2020, JFMA)
+
+# metrics
+compare <- data.frame(actual = JFMA$avg_demand_mgd,
+                      predicted = JFMApred)
+compare
+
+error <- RMSE(JFMApred,JFMA$avg_demand_mgd)
+error
+
+ttarg <- JFMA$avg_demand_mgd
+metrics_list = c("R2","MAE","MAPE","RMSE")
+mmetric(ttarg, JFMApred, metrics_list)
 ```
 
 
-```{r}
-glimpse(Avg3)
-summary(Avg3)
-```
+
+
 
 
 > Here we took the 3 day average of some of the most interesting variables per our EDA. We used 0.05 as our benchmark for statistically significant. 
@@ -349,9 +408,4 @@ ttarg<-Avg3_2022$avg_demand_mgd
 mmetric(ttarg,predictions,metrics_list)
 ```
 
-2020 Regression Model to Predict 2021 Data as a simple test
-```{r}
 
-```
-
-```
