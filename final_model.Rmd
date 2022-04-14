@@ -35,7 +35,8 @@ list.of.packages <- c("tidyverse",
                       "kableExtra",
                       "matrixStats",
                       "rminer",
-                      "mltools")
+                      "mltools",
+                      "zoo")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
@@ -53,6 +54,7 @@ library(kableExtra)
 library(matrixStats)
 library(rminer)
 library(mltools)
+library(zoo)
 ```
 
 ## Read CSV files and pre process
@@ -128,6 +130,31 @@ mgd_avg <- wd%>%
 
 ```
 
+Rollmean 3 Day Average Calculations
+```{r}
+# 3 Day Temp Mean Calculations
+avg3update <- mgd_avg %>% 
+  mutate(TempMean3Day = rollmean(TemperatureMean, k = 3, fill = NA))
+
+summary(avg3update)
+
+# 3 Day Precip Mean Calculations
+avg3update <- avg3update %>% 
+  mutate(Precip3Day = rollmean(Precipitation, k = 3, fill = NA))
+
+summary(avg3update)
+
+# Remove Temp and Precip variables
+
+avg3update <- avg3update %>% 
+  select(-Precipitation, -TemperatureMax, -TemperatureMin, -TemperatureMean)
+
+summary(avg3update)
+```
+
+
+
+
 > If we want to try to predict other vairables we can just uncomment avg_demand_mgd and comment out the one we want to predict for. Not sure if we want to do that though?
 
 # Add custom functions
@@ -186,6 +213,7 @@ Avg3 = mgd_avg %>%
                  'SnowDepth'))
 
 glimpse(Avg3)
+summary(Avg3)
 ```
 
 ## Log Numeric Variables
