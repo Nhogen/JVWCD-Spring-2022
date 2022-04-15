@@ -839,6 +839,7 @@ kable(t(cv_all),digits=2)
 }
 ```
 
+
 ```{r}
 cv_function(Avg4, target, nFolds, seedVal, metrics_list)
 ```
