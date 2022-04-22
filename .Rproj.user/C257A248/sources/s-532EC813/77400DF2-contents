@@ -1,0 +1,99 @@
+---
+title: "Assignment 4"
+author: "Nathaniel Hogenson"
+date: "19-Mar-2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+## Revenue Management
+Consider the booking limit problem for an airline flying between Dallas and Hong Kong with a seating capacity of 300. There are two fare classes: \$1,200 and \$900. Suppose also that there are two classes of customers who travel on this super busy route: business travelers (who book very late) and leisure travelers (who plan and book early). Hong Kong is an attractive vacation spot and there are enough leisure traverlers to book the entire flight. The leisure travelers would be willing to pay \$900 for the ticket but not the more expensive \$1,200. The business travelers, however, would be willing to pay \$1,200. The number of business travelers is unknown ahead of time and and is normally distributed with mean 20 and standard deviation 5.
+
+Please respond to the below questions individually. The first four questions are each worth 2 points. Question 5 is worth 4 points. Replace *??* in the below codes appropriately to answer the questions.
+
+### Using simulation to find the optimal protection level for \$1,200 ticket.
+```{r}
+samplesize<- 1000    
+# let us estimate expected revenue for different protection levels (0 through 40):
+MeanRevenue <- rep(0,41)
+MeanRevenue.se <- rep(0,41)
+
+i <- 1
+set.seed(123)
+for (N in 0:40) { # number of seats protected for business travelers
+  Y <- rnorm(samplesize,20,5)  # simulate number of business travelers (one for each trial -- 1000 times)
+  data <- data.frame(Samples = seq(1:samplesize))
+  data <- data %>% 
+    mutate(Num_leisure_travelers = rep((300-N),samplesize),
+           Num_business_travelers = ifelse(Y-N>=0,N,Y),
+           Tot_rev = 900*Num_leisure_travelers +
+             1200*Num_business_travelers)
+  
+  # sample average profit calculation
+  Mean_revenue <- mean(data$Tot_rev)
+  SE <- sd(data$Tot_rev)/sqrt(samplesize)
+  LCL <- mean(data$Tot_rev) - 1.96*SE
+  UCL <- mean(data$Tot_rev) + 1.96*SE
+  
+  MeanRevenue[i] <-  Mean_revenue
+  MeanRevenue.se[i] <- SE
+  i <- i+1
+}
+```
+
+
+> Q1. Plot the average revenue (along with the 95% confidence interval) vs. number of seats protected for business travelers.
+
+``` {r}
+
+ggplot() + 
+  geom_line(aes(x=0:40, y= MeanRevenue)) +
+  geom_line(aes(x=0:40, y= MeanRevenue + 1.96*MeanRevenue.se),
+            color = "blue") +
+  geom_line(aes(x=0:40, y= MeanRevenue - 1.96*MeanRevenue.se),
+            color = "red") +
+  xlab('Number of seats protected for business travelers')
+  ylab('Average revenue')
+
+```
+
+> Q2. What is the best estimate for the optimal (i.e., highest) expected revenue?
+
+```{r}
+# Maximum expected revenue
+MeanRevenue[MeanRevenue==max(MeanRevenue)]
+```
+
+> Q3. What should be optimal protection level for $1,200 ticket?
+
+```{r}
+# optimal number of seats protected for $1,200:
+match(max(MeanRevenue),MeanRevenue)-1
+```
+
+> Q4. The 95\% confidence interval for the optimal (i.e., highest) expected revenue is
+
+```{r}
+# 95% confidence interval
+MeanRevenue[MeanRevenue==max(MeanRevenue)] - 1.96*MeanRevenue.se[MeanRevenue==max(MeanRevenue)]
+MeanRevenue[MeanRevenue==max(MeanRevenue)] + 1.96*MeanRevenue.se[MeanRevenue==max(MeanRevenue)]
+```
+
+### Using critical-fractile approach to find the optimal protection level for \$1,200 ticket.
+
+> Q5. Use the critical-fractile approach to solve for the optimal protection level for \$1,200 ticket and verify that you get the same answer for optimal protection level as the one obtained using simulation approach.
+
+```{r}
+cost.underage <- 1200-900
+cost.overage <- 900
+
+critical.fractile <- cost.underage/(cost.underage + cost.overage)
+
+protection.level <- qnorm(critical.fractile,mean=20,sd=5)
+#That does round to 17 which is what we got in Q3
+round(protection.level,0)
+```

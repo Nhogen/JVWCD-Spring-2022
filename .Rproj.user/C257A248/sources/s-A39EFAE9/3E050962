@@ -1,0 +1,28 @@
+{
+    "id": "3E050962",
+    "path": "~/GitHub/JVWCD-Spring-2022/model.Rmd",
+    "project_path": "model.Rmd",
+    "type": "r_markdown",
+    "hash": "1748647848",
+    "contents": "",
+    "dirty": false,
+    "created": 1648912504875.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "chunk_output_type": "inline",
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "136,0",
+        "scrollLine": "130",
+        "last_setup_crc32": "A39EFAE9bb338d19"
+    },
+    "folds": "286|6|314|0|\n330|6|333|0|\n337|8|351|0|\n356|6|360|0|\n",
+    "lastKnownWriteTime": 1649525502,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1649525895919,
+    "read_only": false,
+    "read_only_alternatives": []
+}

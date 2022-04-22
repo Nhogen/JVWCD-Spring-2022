@@ -1,4 +1,0 @@
-"0","Avg3 <- Avg3%>%"
-"0","  mutate(TemperatureMax = log(TemperatureMax))"
-"0","  "
-"0",""

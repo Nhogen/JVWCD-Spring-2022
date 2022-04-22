@@ -1,2 +1,0 @@
-"0","set.seed(6496)"
-"0","mod4 <- ksvm(avg_demand_mgd ~ ., data = train, kernal=""polydot"", C=10)"

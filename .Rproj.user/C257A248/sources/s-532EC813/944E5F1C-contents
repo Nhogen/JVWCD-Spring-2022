@@ -70,7 +70,6 @@ wa <- read.csv("new_weather_slc_airport.csv")%>%
          RainDays = ifelse(Precipitation < 0.05, 0 , RainDays),
          Precipitation = ifelse(Precipitation < 0.05, 0 , Precipitation))%>%
   filter(CalendarYear>=2020)
-summary(wa)
 ```
 
 ### System Demand Data
@@ -85,10 +84,9 @@ sd <- read.csv("new_daily_demand.csv")%>%
          'max_demand_mgd' = 'Max.Daily.Demand..mgd.',
          'min_demand_cfs' = 'Min.Daily.Demand..cfs.',
          'min_demand_af' = 'Min.Daily.Demand..af.',
-         'min_demand_mgd' = 'Min.Daily.Demand..mgd.')%>%#Clifton said this is a min
+         'min_demand_mgd' = 'Max.Daily.Demand..mgd..1')%>%#Clifton said this is a min
   mutate(date = as.Date(ReadDate,format="%m/%d/%Y"))
 
-summary(sd)
 ```
 
 > CFS (cubic feet per second) – This is a measurement of flow at a given point. It represents how many cubic feet pass a point in each second. For example, if you have an average of 30 cfs at 1 p.m., that means that during that hour, an average of 30 cubic feet was passing the point each second.
@@ -106,7 +104,6 @@ summary(sd)
 
 ```{r}
 wd <- merge(wa,sd,by="date")
-summary(wd)
 ```
 
 ### Select MGD Average as Target Variable
@@ -125,6 +122,7 @@ mgd_avg <- wd%>%
          -min_demand_af,
          -min_demand_mgd)%>%
   select(-WeatherDate,-ReadDate)
+  
 
 ```
 
@@ -136,7 +134,7 @@ mgd_avg <- wd%>%
 
 ```{r}
 moving_avg_3_rows <- function(x){
-  (lag(x,4) + lag(x,3) + lag(x,2) + lag(x,1))/4
+  lag(x,4) + (lag(x,3) + lag(x,2) + lag(x,1))/4
 }
 #ChangeDay
 #moving_avg_3_rows <- function(x){
@@ -167,6 +165,9 @@ mgd_avg <- mgd_avg %>%
 mgd_avg <- dplyr::left_join(mgd_avg,rainwk,by="Week_no")
 
 mgd_avg <- mgd_avg%>% select(-Week_no)
+
+
+
 
 glimpse(mgd_avg)
 summary(mgd_avg)
@@ -225,18 +226,8 @@ Avg3 = mgd_avg %>%
   select(-one_of('TemperatureMean',#Remove un averaged columns
                  'Precipitation',
                  'SnowDepth'))
-
-glimpse(Avg3)
 ```
 
-## Log Numeric Variables
-
-```{r}
-Avg3 <- Avg3%>%
-  mutate(TemperatureMax = log(TemperatureMax))
-  
-
-```
 
 
 ```{r}
@@ -266,47 +257,15 @@ It's correlation to our tarter variable was positive with a score of 0.5495006. 
 ## Remove Calendar Variables from Datasets to see how model performance if affected.
 
 ```{r}
-#mgd_avg
-mgd_avg_2022 <- mgd_avg%>% 
-  filter(CalendarYear == 2022)%>%
-  select(-date,
-         -CalendarYear,
-         #-CalendarMonth,
-         -CalendarDay)%>%
-  mutate(season = as.factor(season))
-
 mgd_avg <- mgd_avg%>%
-  filter(CalendarYear != 2022)%>%
   select(-date,
          -CalendarYear,
          -CalendarMonth,
          -CalendarDay)%>%
   mutate(season = as.factor(season))
-
-
   
-#
-Avg3_2022 <- Avg3%>% 
-  filter(CalendarYear == 2022)%>%
-  select(-date,
-         -CalendarYear,
-         -CalendarMonth,
-         -CalendarDay)%>%
-  mutate(season = as.factor(season))
 
 Avg3 <- Avg3%>%
-  filter(CalendarYear != 2022)%>%
-  select(-date,
-         -CalendarYear,
-         -CalendarMonth,
-         -CalendarDay)%>%
-  mutate(season = as.factor(season))
-
-
-
-
-PrevDayAll_2022 <- PrevDayAll%>%
-  filter(CalendarYear == 2022)%>%
   select(-date,
          -CalendarYear,
          -CalendarMonth,
@@ -314,12 +273,12 @@ PrevDayAll_2022 <- PrevDayAll%>%
   mutate(season = as.factor(season))
 
 PrevDayAll <- PrevDayAll%>%
-  filter(CalendarYear != 2022)%>%
   select(-date,
          -CalendarYear,
          -CalendarMonth,
          -CalendarDay)%>%
   mutate(season = as.factor(season))
+
 ```
 
 > I wanted to try removing these variables because it felt more consistant with our goal of predicting water demand based on weather data. 
@@ -396,14 +355,14 @@ metrics_list = c("R2","MAE","MAPE","RMSE")
 ## Model with our standard transformations
 
 ```{r}
-mod <- lm(log(avg_demand_mgd) ~ . + log(TemperatureMean), data=train)
+mod <- lm(avg_demand_mgd ~., data=train)
 summary(mod)
 ```
 
 > It is clear from this model that Precip3Day was a much more useful predictor than perciprition alone because it was more statistcally significant and had a more dramatic coeficient. This makes sense because 261 weeks in the year had rainfall so it seems as though it would have a large impact.
 
 
-## Model with Average 4 days
+## Model with Average 3 days
 
 ```{r}
 mod_Avg3 <- lm(avg_demand_mgd ~., data=train_Avg3)
@@ -477,6 +436,25 @@ mmetric(ttarg,trainpred,metrics_list)
 > MAE : 
 
 
+
+## Test mod
+
+```{r}
+predictions <- mod %>% 
+  predict(test)
+
+compare <- data.frame(actual = test$avg_demand_mgd,
+                      predicted = predictions)
+
+error <- RMSE(predictions,test$avg_demand_mgd)
+targ<-test$avg_demand_mgd
+mmetric(targ,predictions,metrics_list)
+
+
+```
+
+
+
 ## Test mod_Avg3
 
 ```{r}
@@ -494,58 +472,6 @@ mmetric(targ,predictions,metrics_list)
 ```
 
 
-## Test mod_Avg3 against 2022 data
-
-```{r}
-predictions <- mod_Avg3%>% 
-  predict(Avg3_2022)
-
-compare <- data.frame(actual = Avg3_2022$avg_demand_mgd,
-                      predicted = predictions)
-
-error <- RMSE(predictions,Avg3_2022$avg_demand_mgd)
-targ<-Avg3_2022$avg_demand_mgd
-mmetric(targ,predictions,metrics_list)
-```
-```{r}
-summary(Avg3_2022)
-
-```
-
-
-------------------------------------------------------------------------------
-
-
-
-
-## Test mod
-
-```{r}
-predictions <- mod %>% 
-  predict(test)
-
-compare <- data.frame(actual = test$avg_demand_mgd,
-                      predicted = predictions)
-
-error <- RMSE(predictions,test$avg_demand_mgd)
-targ<-test$avg_demand_mgd
-mmetric(targ,predictions,metrics_list)
-
-
-
-predictions <- mod%>% 
-  predict(mgd_avg_2022)
-
-compare <- data.frame(actual = mgd_avg_2022$avg_demand_mgd,
-                      predicted = predictions)
-
-error <- RMSE(predictions,mgd_avg_2022$avg_demand_mgd)
-targ<-mgd_avg_2022$avg_demand_mgd
-mmetric(targ,predictions,metrics_list)
-```
-
-
-
 ## Test mod_PrevDayAll
 
 ```{r}
@@ -560,16 +486,6 @@ targ<-test_PrevDayAll$avg_demand_mgd
 mmetric(targ,predictions,metrics_list)
 
 
-
-predictions <- mod_PrevDayAll%>% 
-  predict(PrevDayAll_2022)
-
-compare <- data.frame(actual = PrevDayAll_2022$avg_demand_mgd,
-                      predicted = predictions)
-
-error <- RMSE(predictions, PrevDayAll_2022$avg_demand_mgd)
-targ<-PrevDayAll_2022$avg_demand_mgd
-mmetric(targ,predictions,metrics_list)
 ```
 
 > To summarize the model with the average of the last 3 days for those 3 variables performed the best of both the train and the test data.
