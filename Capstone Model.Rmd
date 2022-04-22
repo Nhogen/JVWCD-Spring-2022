@@ -127,11 +127,11 @@ mgd_avg <- dplyr::left_join(mgd_avg,rainwk,by="Week_no")
 
 mgd_avg <- mgd_avg%>% select(-Week_no)
 
-# Rollmean 4 Day Average Calculations
+# Rollmean 9 Day Average Calculations
 Avg4 <- mgd_avg %>% 
-  mutate(TempMean4Day = rollmean(TemperatureMean, k = 4, fill = mean(TemperatureMean)),
-         Precip4Day = rollmean(Precipitation, k = 4, fill = mean(Precipitation)),
-         SnowDepth4Day = rollmean(SnowDepth, k = 4, fill = mean(SnowDepth)))%>% 
+  mutate(TempMean4Day = rollmean(TemperatureMean, k = 9, fill = mean(TemperatureMean)),
+         Precip4Day = rollmean(Precipitation, k = 9, fill = mean(Precipitation)),
+         SnowDepth4Day = rollmean(SnowDepth, k = 9, fill = mean(SnowDepth)))%>% 
   select(-Precipitation, -TemperatureMean, -SnowDepth)
 ```
 
