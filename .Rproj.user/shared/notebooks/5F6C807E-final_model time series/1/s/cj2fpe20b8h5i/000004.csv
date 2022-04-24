@@ -1,0 +1,6 @@
+"0","set.seed(6496)"
+"0",""
+"0","pred_2022 <- forecast.tslm(tslm_mod, newdata = Avg3_2022)"
+"2","Error in forecast.tslm(tslm_mod, newdata = Avg3_2022) : 
+  could not find function ""forecast.tslm""
+"

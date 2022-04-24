@@ -1,0 +1,3 @@
+"0","#mod_Avg3 <- lm(avg_demand_mgd ~., data=train_Avg3)"
+"0",""
+"0","#summary(mod_Avg3)"

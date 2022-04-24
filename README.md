@@ -1,34 +1,31 @@
 # JVWCD Spring 2022
 
-## Explanation of Files
+This repo is a Capstone project for the MSBA program at the University of Utah. This project was completed for Jordan Valley Water Conservancy District. 
 
-### R Files
+# Business Statement
 
-***JVWCD-Spring-2022.Rproj***
-> If you open this and then open the rmd file you should be able to work from R studio and access the csv or xlsx files.
+There is a strong correlation between water usage and weather patterns in the water industry. Water usage increases during warmer and drier periods, and when it’s colder and wetter, water usage is typically less. Jordan Valley Water Conservancy District (JVWCD) has noticed this trend and is wanting to find a solution that will allow them to be more proactive and not so reactive to changes in water demand with these seasonal trends.
 
-***eda.Rmd*** is the code for our EDA assignment. We can each create a branch and each have our own version of this or we can take turns pushing and pulling and working on specific parts.
+Historically, operations staff have worked in a reactive state chasing water demands of community members, which is influenced by changing weather. Most of this variability happens in the summer, with residential outdoor landscape watering being the leading consumer. Roughly 65% of the community’s water use is in that outdoor landscape space. This reactive chase ensures that the community always has water, which often requires water managers, supervisors and operators to spend long hours (including overtime hours), watching and reacting to changes in water demand. Managing the system’s water demand can be like steering a large ship – sudden and abrupt changes are not easily absorbed. Also, there is a cost factor to this. Well-informed planning to operate the system with consistency and minor tweaks saves money. However, operational costs can add up quickly if a well is started at an unplanned time. This event could cost the water system $5,000 to $9,000 in electricity demand charges alone.
 
-### XLSX Files
-***System_Demand_and_Weather_Data.xlsx*** is the incomplete dataset with not all of 2021.
+# Analytic Objective
 
-***System Demand and Weather Data 2021.xlsx*** is the latest dataset from Clifton with all of 2021 data. Looks like it has 2020 and 2021
+JVWCD would like to be more efficient with its resources and manpower. The goal of this capstone project is to explore modeling water demand against weather data. The ideal outcome of this project would be a predictive model that gives the operations team more confidence in making decisions related to water demand so that they can move to a more proactive form of water deliveries.
 
-### CSV Files
+# rmd and HTML files
 
-***2_year_system_demand.csv*** is the two year system demand sheet in CSV format from the System Demand and Weather Data 2021.xlsx file.
++ eda.rmd and eda.html
 
-***system_demand_by_point_type.csv*** is the system demand by point sheet in CSV format from the System Demand and Weather Data 2021.xlsx file.
+    + This file contains our initial look at the data provided to us by Jordan Valley Water to identify questions and generate ideas.
 
-***weather_sl_airport.csv*** is the weather data that was in the System Demand and Weather Data 2021.xlsx file.
++ sandbox_1-5.rmd
 
-## Notes
+    + These files are files used by the group to compare models and generate ideas that help improve performance metrics. These files helped us arrive at many of our pre processing decisions.
 
-+ (From Zach) The first thing I did in the rmd file was to get the dates in a consistent format. I figured we'd want the same format to be able to look at the same day or hour between the data frames.
++ Model_Comparison.rmd and Model_Comparison.html
 
-## Questions
+    + This model shows how we chose the model that we did. What performance metrics we used, and testing for overfitting.
 
-+ There is a NULL value in the 2 year system demand table. What do we do with NULL's? (Zach)
-+ The grain for weather data is daily. Do we want the model output to be daily or hourly? (Zach)
-+ If we want the output to be daily how should we agregate the hourly demand to get daily? (Zach)
-+ It looks like there are 3 negative values in hourly_demand in the sd file. I assume we would just remove those as errors? (Nate)
+# Team Members
+
+Jackson Roper, Jake Thomas, Nate Hogenson, and Zachery McDougall
