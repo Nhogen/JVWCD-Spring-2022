@@ -2,6 +2,11 @@
 
 This repo is a Capstone project for the MSBA program at the University of Utah. This project was completed for Jordan Valley Water Conservancy District. 
 
+# Models
+
++ Water Demand Forecast.twb
+    + The tableu model with Time Seriese predictions.
+
 # rmd and HTML files
 
 + eda.rmd and eda.html
