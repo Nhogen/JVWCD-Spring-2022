@@ -5,15 +5,12 @@ This repo is a Capstone project for the MSBA program at the University of Utah. 
 # Models
 
 + Water Demand Forecast.twb
-<<<<<<< Updated upstream
     + The tableu model with Time Series predictions.
-=======
-    + The tableu model with Time Seriese predictions.
 + KNN.Rmd
-    + A file with only the code to pre process data and train the KNN model (Note, in this file numeric variables are logged so output is also logged and must be unlogged to be human readable.)
+    + A file with only the code to pre process data and train the KNN model 
+        + Note, in this file numeric variables are logged so output is also logged and must be unlogged to be human readable.
 + LM.Rmd
     + A file with only the code to pre process data and train the LM model
->>>>>>> Stashed changes
 
 # rmd and HTML files
 
