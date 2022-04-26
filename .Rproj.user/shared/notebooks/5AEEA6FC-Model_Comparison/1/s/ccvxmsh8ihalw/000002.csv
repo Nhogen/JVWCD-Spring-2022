@@ -1,8 +1,0 @@
-"0","MLP <- make_Weka_classifier(""weka/classifiers/functions/MultilayerPerceptron"")"
-"0","l <- 0.3"
-"0","m <- 0.2"
-"0","n <-100"
-"0","h <- 'a'"
-"0",""
-"0",""
-"0","mod2 <- MLP(avg_demand_mgd ~ ., data = train, control = Weka_control(L=l,M=m, N=n, H=h))"

@@ -3,7 +3,7 @@
     "path": "~/GitHub/JVWCD-Spring-2022/JVWCD-Spring-2022/KNN.Rmd",
     "project_path": "KNN.Rmd",
     "type": "r_markdown",
-    "hash": "2447837534",
+    "hash": "1550722631",
     "contents": "",
     "dirty": false,
     "created": 1650951358006.0,
@@ -13,17 +13,17 @@
         "tempName": "Untitled1",
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "259,99",
-        "scrollLine": "162",
+        "cursorPosition": "229,0",
+        "scrollLine": "161",
         "chunk_output_type": "inline",
-        "last_setup_crc32": "D0293573bb338d19"
+        "last_setup_crc32": ""
     },
     "folds": "",
-    "lastKnownWriteTime": 1650951649,
+    "lastKnownWriteTime": 1650952409,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1650951649909,
+    "last_content_update": 1650952409117,
     "read_only": false,
     "read_only_alternatives": []
 }

@@ -142,6 +142,7 @@ Avg4 <- mgd_avg %>%
 summary(Avg4)
 ```
 
+
 ## Log Numeric Variables
 
 ```{r}

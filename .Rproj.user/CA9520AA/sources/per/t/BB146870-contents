@@ -228,7 +228,6 @@ MAPE	Interpretation
 ' 20 % - 50 %	OK
 ' > 50 %	Not good
 
-
 ### K-Nearest Neighbors
 
 ```{r}
