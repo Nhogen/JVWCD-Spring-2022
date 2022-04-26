@@ -5,7 +5,7 @@ This repo is a Capstone project for the MSBA program at the University of Utah. 
 # Models
 
 + Water Demand Forecast.twb
-    + The tableu model with Time Seriese predictions.
+    + The tableu model with Time Series predictions.
 
 # rmd and HTML files
 
