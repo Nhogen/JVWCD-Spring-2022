@@ -142,7 +142,7 @@ Avg4 <- mgd_avg %>%
 summary(Avg4)
 ```
 
-## Log Numeric Variables
+## Option Log Numeric Variables
 
 ```{r}
 Avg4g <- Avg4%>%
@@ -177,6 +177,8 @@ Avg4g <- Avg4%>%
   
 
 ```
+
+> We did not log numeric variables to make output easier to interpret however if you remove the g from the above code it does improve model performace slightly. We felt it was not a significant enough improvement to justify the ease of comparing predictions. 
 
 ## Split Data into Seasons to test performance by Season.
 
@@ -498,7 +500,7 @@ mmetric(targ,predictions,metrics_list)
 ```
 > Seems good but still poor performance in Winter
 
-### K-Nearest Neighbours
+### K-Nearest Neighbors
 
 ```{r}
 mod3 <- IBk(avg_demand_mgd ~ ., data = train, control = Weka_control(K = 34, I= TRUE))
@@ -507,26 +509,26 @@ mod3 <- IBk(avg_demand_mgd ~ ., data = train, control = Weka_control(K = 34, I= 
 Valid options are:
 
  -I
-  Weight neighbours by the inverse of their distance
+  Weight neighbors by the inverse of their distance
   (use when k > 1)
  -F
-  Weight neighbours by 1 - their distance
+  Weight neighbors by 1 - their distance
   (use when k > 1)
  -K <number of neighbors>
-  Number of nearest neighbours (k) used in classification.
+  Number of nearest neighbors (k) used in classification.
   (Default = 1)
  -E
-  Minimise mean squared error rather than mean absolute
+  Minimize mean squared error rather than mean absolute
   error when using -X option with numeric prediction.
  -W <window size>
   Maximum number of training instances maintained.
   Training instances are dropped FIFO. (Default = no window)
  -X
-  Select the number of nearest neighbours between 1
+  Select the number of nearest neighbors between 1
   and the k value specified using hold-one-out evaluation
   on the training data (use when k > 1)
  -A
-  The nearest neighbour search algorithm to use (default: weka.core.neighboursearch.LinearNNSearch).
+  The nearest neighbor search algorithm to use (default: weka.core.neighboursearch.LinearNNSearch).
 
 
 ```{r echo=F}
@@ -898,10 +900,10 @@ mmetric(targ,predictions,metrics_list)
 > Seems to be way overfit
 
 
-> The best perofrming model is mod3 using KNN.
+> The best performing model is mod3 using KNN.
 
 
-# Overfitting Tests on K-Nearest Neighbours Model
+# Overfitting Tests on K-Nearest Neighbors Model
 
 ## Test
 

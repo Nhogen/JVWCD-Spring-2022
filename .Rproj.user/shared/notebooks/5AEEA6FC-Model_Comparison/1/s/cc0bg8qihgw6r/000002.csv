@@ -104,6 +104,12 @@ Attaching package: ‘gridExtra’
 "0","library(useful)"
 "0","library(ISOweek)"
 "0","library(kableExtra)"
+"2","Registered S3 methods overwritten by 'htmltools':
+  method               from         
+  print.html           tools:rstudio
+  print.shiny.tag      tools:rstudio
+  print.shiny.tag.list tools:rstudio
+"
 "2","
 Attaching package: ‘kableExtra’
 

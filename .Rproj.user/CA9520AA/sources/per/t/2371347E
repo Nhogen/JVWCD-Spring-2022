@@ -1,28 +1,28 @@
 {
-    "id": "8FF13E42",
+    "id": "2371347E",
     "path": "~/GitHub/JVWCD-Spring-2022/JVWCD-Spring-2022/Model_Comparison.Rmd",
     "project_path": "Model_Comparison.Rmd",
     "type": "r_markdown",
-    "hash": "792988980",
+    "hash": "4151762768",
     "contents": "",
     "dirty": false,
-    "created": 1650825093888.0,
+    "created": 1650950127088.0,
     "source_on_save": false,
     "relative_order": 2,
     "properties": {
         "chunk_output_type": "inline",
         "source_window_id": "",
         "Source": "Source",
-        "cursorPosition": "1020,0",
-        "scrollLine": "916",
-        "last_setup_crc32": "3583CC85bb338d19"
+        "cursorPosition": "530,99",
+        "scrollLine": "460",
+        "last_setup_crc32": "D0293573bb338d19"
     },
     "folds": "",
-    "lastKnownWriteTime": 1650829184,
+    "lastKnownWriteTime": 1650951289,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1650829184709,
+    "last_content_update": 1650951379509,
     "read_only": false,
     "read_only_alternatives": []
 }
