@@ -1,0 +1,228 @@
+---
+title: "LM"
+author: "JVWCD Capstone Group"
+date: "4/25/2022"
+output: 
+  html_document:
+    highlight: breezedark
+    number_sections: no
+    toc: yes
+    fig_width: 15
+    fig_height: 10
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Setup
+
+## Packages
+
+```{r echo=T, results='hide', message=F, warning=F}
+list.of.packages <- c("tidyverse",
+                      "lubridate",
+                      "chron",
+                      "knitr",
+                      "corrplot",
+                      "caret",
+                      "scales",
+                      "gridExtra",
+                      "useful",
+                      "ISOweek",
+                      "kableExtra",
+                      "matrixStats",
+                      "rminer",
+                      "mltools",
+                      "zoo",
+                      "RWeka",
+                      "kernlab",
+                      "forecast")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+
+library(tidyverse)
+library(lubridate)
+library(chron)
+library(knitr)
+library(corrplot)
+library(caret)
+library(scales)
+library(gridExtra)
+library(useful)
+library(ISOweek)
+library(kableExtra)
+library(matrixStats)
+library(rminer)
+library(mltools)
+library(zoo)
+library(RWeka)
+library(kernlab)
+library(forecast)
+
+MLP <- make_Weka_classifier("weka/classifiers/functions/MultilayerPerceptron")
+
+# R2
+rsq <- function (x, y) cor(x, y) ^ 2
+# Performance Metrics
+metrics_list = c("R2","MAE","MAPE","RMSE")
+```
+
+## Read CSV files and pre process
+
+```{r}
+wa <- read.csv("new_weather_slc_airport.csv")%>%
+  mutate(season = ifelse(CalendarMonth %in% c('3','4','5'), 'Spring',
+                         ifelse(CalendarMonth %in% c('6','7','8'), 'Summer',
+                                ifelse(CalendarMonth %in% c('9','10','11'), 'Fall',
+                                       ifelse(CalendarMonth %in% c('12','1','2'), 'Winter','0')))),
+         #RainDays = factor(RainDays),
+         date = as.Date(WeatherDate,format="%m/%d/%Y"),
+         RainDays = ifelse(Precipitation < 0.05, 0 , RainDays),
+         Precipitation = ifelse(Precipitation < 0.05, 0 , Precipitation))%>%
+  filter(CalendarYear>=2020)
+
+
+sd <- read.csv("new_daily_demand.csv")%>%
+  rename('avg_demand_cfs' = 'Avg.Daily.Demand..cfs.',
+         'avg_demand_af' = 'Avg.Daily.Demand..af.',
+         'avg_demand_mgd' = 'Avg.Daily.Demand..mgd.',
+         'max_demand_cfs' = 'Max.Daily.Demand..cfs.',
+         'max_demand_af' = 'Max.Daily.Demand..af.',
+         'max_demand_mgd' = 'Max.Daily.Demand..mgd.',
+         'min_demand_cfs' = 'Min.Daily.Demand..cfs.',
+         'min_demand_af' = 'Min.Daily.Demand..af.',
+         'min_demand_mgd' = 'Min.Daily.Demand..mgd.')%>%#Clifton said this is a min
+  mutate(date = as.Date(ReadDate,format="%m/%d/%Y"))
+
+
+wd <- merge(wa,sd,by="date")
+
+
+mgd_avg <- wd%>%
+  select(-avg_demand_cfs,
+         -avg_demand_af,
+         #-avg_demand_mgd, ## Target Variable
+         -max_demand_cfs,
+         -max_demand_af,
+         -max_demand_mgd,
+         -min_demand_cfs,
+         -min_demand_af,
+         -min_demand_mgd)%>%
+  select(-WeatherDate,-ReadDate)
+
+
+rainwk <- mgd_avg%>%
+  mutate(Week_no = format(date, "%U"))%>%
+  group_by(Week_no)%>%
+  summarize(RainWeek = as.factor(ifelse(sum(RainDays)>0,1,0)))
+
+mgd_avg <- mgd_avg %>%
+  mutate(Week_no = as.factor(format(date, "%U")),
+         RainDays = as.factor(RainDays),
+         season = as.factor(season))
+
+mgd_avg <- dplyr::left_join(mgd_avg,rainwk,by="Week_no")
+
+mgd_avg <- mgd_avg%>% select(-Week_no)
+
+# Rollmean 9 Day Average Calculations
+Avg4 <- mgd_avg %>% 
+  mutate(TempMean4Day = rollmean(TemperatureMean, k = 9, fill = mean(TemperatureMean)),
+         Precip4Day = rollmean(Precipitation, k = 9, fill = mean(Precipitation)),
+         SnowDepth4Day = rollmean(SnowDepth, k = 9, fill = mean(SnowDepth)))%>% 
+  select(-Precipitation, -TemperatureMean, -SnowDepth)
+```
+
+## Data After Pre Processing
+
+```{r}
+summary(Avg4)
+```
+
+
+## Log Numeric Variables
+
+```{r}
+Avg4 <- Avg4%>%
+  mutate(
+         avg_demand_mgd = log(avg_demand_mgd),
+         TemperatureMax = log(TemperatureMax),
+         TemperatureMin = log(TemperatureMin),
+         CoolingDegreeDays = ifelse(CoolingDegreeDays >= 1,
+                                    log(CoolingDegreeDays),
+                                    CoolingDegreeDays
+         ),
+         SnowFall = ifelse(SnowFall >= 0.01,
+                                    log(SnowFall),
+                                    SnowFall
+         ),
+         TempMean4Day = log(TempMean4Day),
+         Precip4Day = ifelse(Precip4Day >= 0.01,
+                                    log(Precip4Day),
+                                    Precip4Day
+         ),
+         SnowDepth4Day = ifelse(SnowDepth4Day >= 0.01,
+                                    log(SnowDepth4Day),
+                                    SnowDepth4Day
+         ),
+         season = as.factor(season),
+         CalendarMonth = as.factor(CalendarMonth)
+         )%>%
+  select(-date,
+         #-CalendarYear,
+         #-CalendarMonth,
+         -CalendarDay)
+  
+
+```
+
+> We did not log numeric variables to make output easier to interpret however if you remove the g from the above code it does improve model performace slightly. We felt it was not a significant enough improvement to justify the ease of comparing predictions. 
+
+## Split Data into Seasons to test performance by Season.
+
+```{r}
+# Spring
+Avg4_Sp <- Avg4%>% 
+  filter(season == 'Spring')
+# Summer
+Avg4_Su <- Avg4%>% 
+  filter(season == 'Summer')
+# Fall
+Avg4_F <- Avg4%>% 
+  filter(season == 'Fall')
+# Winter is coming
+Avg4_W <- Avg4%>% 
+  filter(season == 'Winter')
+
+# Only 2022
+Avg4_2022 <- Avg4%>% 
+  filter(CalendarYear == 2022)
+```
+
+> We noticed considerably worse performance durring Winter so we decided to look at every season. This is expected as water demand is not driven by Season.
+
+## Split all datasets into Train and test
+
+```{r}
+set.seed(6496)
+
+#Avg4
+
+ti <- createDataPartition(Avg4$avg_demand_mgd, p=0.8,
+                         list = FALSE)
+
+train <- Avg4[ti,]
+test <- Avg4[-ti,]
+```
+
+# Train Model
+
+### LM
+
+```{r}
+mod1 <- lm(avg_demand_mgd ~ ., data=train)
+```
+

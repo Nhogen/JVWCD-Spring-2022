@@ -1,0 +1,5 @@
+"0","Avg4 <- mgd_avg %>% "
+"0","  mutate(TempMean4Day = rollmean(TemperatureMean, k = 9, fill = mean(TemperatureMean)),"
+"0","         Precip4Day = rollmean(Precipitation, k = 9, fill = mean(Precipitation)),"
+"0","         SnowDepth4Day = rollmean(SnowDepth, k = 9, fill = mean(SnowDepth)))%>% "
+"0","  select(-Precipitation, -TemperatureMean, -SnowDepth)"

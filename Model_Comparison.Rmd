@@ -1,11 +1,11 @@
 ---
-title: "Final Model"
+title: "Model Selection and Comparison"
 author: "JVWCD Capstone Group"
 date: "4/14/2022"
 output: 
   html_document:
     highlight: breezedark
-    number_sections: yes
+    number_sections: no
     toc: yes
     fig_width: 15
     fig_height: 10
@@ -17,7 +17,9 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Packages
+# Setup
+
+## Packages
 
 ```{r echo=T, results='hide', message=F, warning=F}
 list.of.packages <- c("tidyverse",
@@ -36,13 +38,11 @@ list.of.packages <- c("tidyverse",
                       "mltools",
                       "zoo",
                       "RWeka",
-                      "kernlab")
+                      "kernlab",
+                      "forecast")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
-```
 
-
-```{r}
 library(tidyverse)
 library(lubridate)
 library(chron)
@@ -60,6 +60,7 @@ library(mltools)
 library(zoo)
 library(RWeka)
 library(kernlab)
+library(forecast)
 
 MLP <- make_Weka_classifier("weka/classifiers/functions/MultilayerPerceptron")
 
@@ -69,7 +70,7 @@ rsq <- function (x, y) cor(x, y) ^ 2
 metrics_list = c("R2","MAE","MAPE","RMSE")
 ```
 
-# Read CSV files and pre process
+## Read CSV files and pre process
 
 ```{r}
 wa <- read.csv("new_weather_slc_airport.csv")%>%
@@ -95,11 +96,17 @@ sd <- read.csv("new_daily_demand.csv")%>%
          'min_demand_af' = 'Min.Daily.Demand..af.',
          'min_demand_mgd' = 'Min.Daily.Demand..mgd.')%>%#Clifton said this is a min
   mutate(date = as.Date(ReadDate,format="%m/%d/%Y"))
+```
 
+## Merge Data
 
+```{r}
 wd <- merge(wa,sd,by="date")
+```
 
+## Isolate Target Variable
 
+```{r}
 mgd_avg <- wd%>%
   select(-avg_demand_cfs,
          -avg_demand_af,
@@ -111,8 +118,11 @@ mgd_avg <- wd%>%
          -min_demand_af,
          -min_demand_mgd)%>%
   select(-WeatherDate,-ReadDate)
+```
 
+## Add Rain Week
 
+```{r}
 rainwk <- mgd_avg%>%
   mutate(Week_no = format(date, "%U"))%>%
   group_by(Week_no)%>%
@@ -126,8 +136,11 @@ mgd_avg <- mgd_avg %>%
 mgd_avg <- dplyr::left_join(mgd_avg,rainwk,by="Week_no")
 
 mgd_avg <- mgd_avg%>% select(-Week_no)
+```
 
-# Rollmean 9 Day Average Calculations
+## Rollmean 9 Day Average Calculations
+
+```{r}
 Avg4 <- mgd_avg %>% 
   mutate(TempMean4Day = rollmean(TemperatureMean, k = 9, fill = mean(TemperatureMean)),
          Precip4Day = rollmean(Precipitation, k = 9, fill = mean(Precipitation)),
@@ -135,13 +148,13 @@ Avg4 <- mgd_avg %>%
   select(-Precipitation, -TemperatureMean, -SnowDepth)
 ```
 
-# Data After Pre Processing
+## Data After Pre Processing
 
 ```{r}
 summary(Avg4)
 ```
 
-# Log Numeric Variables
+## Option Log Numeric Variables
 
 ```{r}
 Avg4g <- Avg4%>%
@@ -177,7 +190,9 @@ Avg4g <- Avg4%>%
 
 ```
 
-# Remove Calendar Variables from Datasets to see how model performance if affected.
+> We did not log numeric variables to make output easier to interpret however if you remove the g from the above code it does improve model performace slightly. We felt it was not a significant enough improvement to justify the ease of comparing predictions. 
+
+## Split Data into Seasons to test performance by Season.
 
 ```{r}
 # Spring
@@ -196,20 +211,11 @@ Avg4_W <- Avg4%>%
 # Only 2022
 Avg4_2022 <- Avg4%>% 
   filter(CalendarYear == 2022)
-
-# Remove 2022
-#Avg4 <- Avg4%>%
-#  filter(CalendarYear != 2022)
 ```
 
+> We noticed considerably worse performance durring Winter so we decided to look at every season. This is expected as water demand is not driven by Season.
 
-
-```{r}
-summary(Avg4)
-
-```
-
-# Split all datasets into Train and test
+## Split all datasets into Train and test
 
 ```{r}
 set.seed(6496)
@@ -222,15 +228,6 @@ ti <- createDataPartition(Avg4$avg_demand_mgd, p=0.8,
 train <- Avg4[ti,]
 test <- Avg4[-ti,]
 ```
-
-# Models
-
-## lm Model
-
-```{r}
-mod1 <- lm(avg_demand_mgd ~ ., data=train)
-```
-
 
 # Model Selection
 
@@ -249,11 +246,16 @@ MAPE	Interpretation
 ' 20 % - 50 %	OK
 ' > 50 %	Not good
 
-# Model Performance
+## Model Performance
 
-## LM
+### LM
 
 ```{r}
+mod1 <- lm(avg_demand_mgd ~ ., data=train)
+```
+
+
+```{r echo=F}
 # Train
 trainpred <- mod1%>% 
   predict(train)
@@ -270,24 +272,6 @@ error <- RMSE(trainpred,train$avg_demand_mgd)
 ttarg<-train$avg_demand_mgd
 print("Train")
 mmetric(ttarg,trainpred,metrics_list)
-
-print("_____________________________________")
-
-# Test
-predictions <- mod1%>% 
-  predict(test)
-
-# Predictions with 95% CI
-testpredCI <- mod1 %>% 
-  predict(test, interval = "confidence")
-
-compare <- data.frame(actual = test$avg_demand_mgd,
-                      predicted = predictions)
-
-error <- RMSE(predictions,test$avg_demand_mgd)
-targ<-test$avg_demand_mgd
-print("Test")
-mmetric(targ,predictions,metrics_list)
 
 print("_____________________________________")
 
@@ -333,7 +317,7 @@ predictions <- mod1%>%
 
 # Predictions with 95% CI
 predictions <- mod1%>% 
-  predict(Avg4_Sy, interval = "confidence")
+  predict(Avg4_Su, interval = "confidence")
 
 
 compare <- data.frame(actual = Avg4_Su$avg_demand_mgd,
@@ -382,9 +366,10 @@ print("Winter is coming (House Stark)")
 mmetric(targ,predictions,metrics_list)
 ```
 
-## MLP Model
+> Really poor performance in the winter.
 
-Multi-layer perceptron
+
+### Multi-layer Perceptron
 
 ```{r}
 MLP <- make_Weka_classifier("weka/classifiers/functions/MultilayerPerceptron")
@@ -419,7 +404,7 @@ mod2 <- MLP(avg_demand_mgd ~ ., data = train, control = Weka_control(L=l,M=m, N=
 https://weka.sourceforge.io/doc.dev/weka/classifiers/functions/MultilayerPerceptron.html
 
 
-```{r}
+```{r echo=F}
 # Train
 trainpred <- mod2%>% 
   predict(train)
@@ -438,24 +423,6 @@ mmetric(ttarg,trainpred,metrics_list)
 
 print("_____________________________________")
 
-# Test
-predictions <- mod2%>% 
-  predict(test)
-
-# Predictions with 95% CI
-testpredCI <- mod2 %>% 
-  predict(test, interval = "confidence")
-
-compare <- data.frame(actual = test$avg_demand_mgd,
-                      predicted = predictions)
-
-error <- RMSE(predictions,test$avg_demand_mgd)
-targ<-test$avg_demand_mgd
-print("Test")
-mmetric(targ,predictions,metrics_list)
-
-print("_____________________________________")
-
 # 2022
 predictions <- mod2%>% 
   predict(Avg4_2022)
@@ -544,40 +511,40 @@ targ<-Avg4_W$avg_demand_mgd
 print("Winter is coming (House Stark)")
 mmetric(targ,predictions,metrics_list)
 ```
+> Seems good but still poor performance in Winter
 
-
-## knn Model
+### K-Nearest Neighbors
 
 ```{r}
-mod3 <- IBk(avg_demand_mgd ~ ., data = train, control = Weka_control(K = 35, I= TRUE))
+mod3 <- IBk(avg_demand_mgd ~ ., data = train, control = Weka_control(K = 34, I= TRUE))
 ```
 
 Valid options are:
 
  -I
-  Weight neighbours by the inverse of their distance
+  Weight neighbors by the inverse of their distance
   (use when k > 1)
  -F
-  Weight neighbours by 1 - their distance
+  Weight neighbors by 1 - their distance
   (use when k > 1)
  -K <number of neighbors>
-  Number of nearest neighbours (k) used in classification.
+  Number of nearest neighbors (k) used in classification.
   (Default = 1)
  -E
-  Minimise mean squared error rather than mean absolute
+  Minimize mean squared error rather than mean absolute
   error when using -X option with numeric prediction.
  -W <window size>
   Maximum number of training instances maintained.
   Training instances are dropped FIFO. (Default = no window)
  -X
-  Select the number of nearest neighbours between 1
+  Select the number of nearest neighbors between 1
   and the k value specified using hold-one-out evaluation
   on the training data (use when k > 1)
  -A
-  The nearest neighbour search algorithm to use (default: weka.core.neighboursearch.LinearNNSearch).
+  The nearest neighbor search algorithm to use (default: weka.core.neighboursearch.LinearNNSearch).
 
 
-```{r}
+```{r echo=F}
 # Train
 trainpred <- mod3%>% 
   predict(train)
@@ -596,24 +563,6 @@ mmetric(ttarg,trainpred,metrics_list)
 
 print("_____________________________________")
 
-# Test
-predictions <- mod3%>% 
-  predict(test)
-
-# Predictions with 95% CI
-testpredCI <- mod3 %>% 
-  predict(test, interval = "confidence")
-
-compare <- data.frame(actual = test$avg_demand_mgd,
-                      predicted = predictions)
-
-error <- RMSE(predictions,test$avg_demand_mgd)
-targ<-test$avg_demand_mgd
-print("Test")
-mmetric(targ,predictions,metrics_list)
-
-print("_____________________________________")
-
 # 2022
 predictions <- mod3%>% 
   predict(Avg4_2022)
@@ -702,9 +651,9 @@ targ<-Avg4_W$avg_demand_mgd
 print("Winter is coming (House Stark)")
 mmetric(targ,predictions,metrics_list)
 ```
+> Seems to do well in Winter. Needs more test for overfitting.
 
-
-## KSVM Model
+### ksvm: Support Vector Machines
 
 ```{r}
 set.seed(6496)
@@ -733,14 +682,14 @@ stringdot String kernel
 The cost parameter penalizes large residuals. So a larger cost will result in a more flexible model with fewer misclassifications. In effect the cost parameter allows you to adjust the bias/variance trade-off. The greater the cost parameter, the more variance in the model and the less bias. Default is 1.. 
 
 
-```{r}
+```{r echo=F}
 # Train
 trainpred <- mod4%>% 
   predict(train)
 
 # Predictions with 95% CI
 trainpredCI <- mod4 %>% 
-  predict(train, interval = "confidence")
+  predict(train)
 
 compare <- data.frame(actual = train$avg_demand_mgd,
                       predicted = trainpred)
@@ -752,31 +701,13 @@ mmetric(ttarg,trainpred,metrics_list)
 
 print("_____________________________________")
 
-# Test
-predictions <- mod4%>% 
-  predict(test)
-
-# Predictions with 95% CI
-testpredCI <- mod4 %>% 
-  predict(test, interval = "confidence")
-
-compare <- data.frame(actual = test$avg_demand_mgd,
-                      predicted = predictions)
-
-error <- RMSE(predictions,test$avg_demand_mgd)
-targ<-test$avg_demand_mgd
-print("Test")
-mmetric(targ,predictions,metrics_list)
-
-print("_____________________________________")
-
 # 2022
 predictions <- mod4%>% 
   predict(Avg4_2022)
 
 # Predictions with 95% CI
 predictions <- mod4 %>% 
-  predict(Avg4_2022, interval = "confidence")
+  predict(Avg4_2022)
 
 compare <- data.frame(actual = Avg4_2022$avg_demand_mgd,
                       predicted = predictions)
@@ -794,7 +725,7 @@ predictions <- mod4%>%
 
 # Predictions with 95% CI
 predictions <- mod4 %>% 
-  predict(Avg4_SP, interval = "confidence")
+  predict(Avg4_Sp)
 
 compare <- data.frame(actual = Avg4_Sp$avg_demand_mgd,
                       predicted = predictions)
@@ -812,7 +743,7 @@ predictions <- mod4%>%
 
 # Predictions with 95% CI
 predictions <- mod4 %>% 
-  predict(Avg4_Su, interval = "confidence")
+  predict(Avg4_Su)
 
 compare <- data.frame(actual = Avg4_Su$avg_demand_mgd,
                       predicted = predictions)
@@ -830,7 +761,7 @@ predictions <- mod4%>%
 
 # Predictions with 95% CI
 predictions <- mod4 %>% 
-  predict(Avg4_F, interval = "confidence")
+  predict(Avg4_F)
 
 compare <- data.frame(actual = Avg4_F$avg_demand_mgd,
                       predicted = predictions)
@@ -848,7 +779,7 @@ predictions <- mod4%>%
 
 # Predictions with 95% CI
 predictions <- mod4 %>% 
-  predict(Avg4_W, interval = "confidence")
+  predict(Avg4_W)
 
 compare <- data.frame(actual = Avg4_W$avg_demand_mgd,
                       predicted = predictions)
@@ -858,12 +789,153 @@ targ<-Avg4_W$avg_demand_mgd
 print("Winter is coming (House Stark)")
 mmetric(targ,predictions,metrics_list)
 ```
+> Better than most but still poor in the winter time
 
 
-> The best perofrming model is mod3
+### tslm: Fit a linear model with time series components
+
+```{r}
+# have to create a time series demand object
+y <- ts(train$avg_demand_mgd, frequency = 365)
+
+# remove avg_demand_mgd from train data
+train2 <- train %>% 
+  select(-avg_demand_mgd)
+
+# generate ts model
+tslm_mod <- tslm(y ~., data = train2)
+
+fit <- fitted(tslm_mod)
+#graph showing actuals vs fitted
+autoplot(y) + autolayer(fit)
+```
+
+Test ts model against 2022 data
+```{r echo=F}
+set.seed(6496)
+
+# Train
+pred_2022 <- forecast(tslm_mod, newdata = train)
+
+predictions <- pred_2022 %>% data.frame(pred_2022)
+predictions <- predictions$Point.Forecast
+
+compare <- data.frame(actual = train$avg_demand_mgd,
+                      predicted = predictions)
+
+error <- RMSE(trainpred,train$avg_demand_mgd)
+ttarg<-train$avg_demand_mgd
+print("Train")
+mmetric(ttarg,trainpred,metrics_list)
+
+print("_____________________________________")
 
 
-# 10 Fold Cross Validation
+#2022
+pred_2022 <- forecast(tslm_mod, newdata = Avg4_2022)
+
+predictions <- pred_2022 %>% data.frame(pred_2022)
+predictions <- predictions$Point.Forecast
+
+compare <- data.frame(actual = Avg4_2022$avg_demand_mgd,
+                      predicted = predictions)
+
+error <- RMSE(predictions,Avg4_2022$avg_demand_mgd)
+targ<-Avg4_2022$avg_demand_mgd
+print("2022")
+mmetric(targ,predictions,metrics_list)
+
+print("_____________________________________")
+
+#Spring
+pred_2022 <- forecast(tslm_mod, newdata = Avg4_Sp)
+
+predictions <- pred_2022 %>% data.frame(pred_2022)
+predictions <- predictions$Point.Forecast
+
+compare <- data.frame(actual = Avg4_Sp$avg_demand_mgd,
+                      predicted = predictions)
+
+error <- RMSE(predictions,Avg4_Sp$avg_demand_mgd)
+targ<-Avg4_Sp$avg_demand_mgd
+print("Spring")
+mmetric(targ,predictions,metrics_list)
+
+print("_____________________________________")
+
+# Summer
+pred_2022 <- forecast(tslm_mod, newdata = Avg4_Su)
+
+predictions <- pred_2022 %>% data.frame(pred_2022)
+predictions <- predictions$Point.Forecast
+
+compare <- data.frame(actual = Avg4_Su$avg_demand_mgd,
+                      predicted = predictions)
+
+error <- RMSE(predictions,Avg4_Su$avg_demand_mgd)
+targ<-Avg4_Su$avg_demand_mgd
+print("Summer")
+mmetric(targ,predictions,metrics_list)
+
+print("_____________________________________")
+
+# Fall
+pred_2022 <- forecast(tslm_mod, newdata = Avg4_F)
+
+predictions <- pred_2022 %>% data.frame(pred_2022)
+predictions <- predictions$Point.Forecast
+
+compare <- data.frame(actual = Avg4_F$avg_demand_mgd,
+                      predicted = predictions)
+
+error <- RMSE(predictions,Avg4_F$avg_demand_mgd)
+targ<-Avg4_F$avg_demand_mgd
+print("Fall")
+mmetric(targ,predictions,metrics_list)
+
+print("_____________________________________")
+
+# Winter
+pred_2022 <- forecast(tslm_mod, newdata = Avg4_W)
+
+predictions <- pred_2022 %>% data.frame(pred_2022)
+predictions <- predictions$Point.Forecast
+
+compare <- data.frame(actual = Avg4_W$avg_demand_mgd,
+                      predicted = predictions)
+
+error <- RMSE(predictions,Avg4_W$avg_demand_mgd)
+targ<-Avg4_W$avg_demand_mgd
+print("Winter is coming (House Stark)")
+mmetric(targ,predictions,metrics_list)
+
+```
+> Seems to be way overfit
+
+
+> The best performing model is mod3 using KNN.
+
+
+# Overfitting Tests on K-Nearest Neighbors Model
+
+## Test
+
+```{r}
+# test
+trainpred <- mod3%>% 
+  predict(test)
+
+compare <- data.frame(actual = test$avg_demand_mgd,
+                      predicted = trainpred)
+
+error <- RMSE(trainpred,test$avg_demand_mgd)
+ttarg<-test$avg_demand_mgd
+print("Test")
+mmetric(ttarg,trainpred,metrics_list)
+
+```
+
+## 10 Fold Cross Validation
 
 ```{r}
 df <- Avg4
@@ -910,7 +982,7 @@ kable(t(cv_all),digits=2)
 cv_function(Avg4, target, 10, seedVal, metrics_list)
 ```
 
-# 3 Fold Cross Validation Winter
+## 3 Fold Cross Validation against only Winter Data
 
 ```{r}
 df <- Avg4_W
@@ -958,4 +1030,6 @@ kable(t(cv_all),digits=2)
 ```{r}
 cv_function(Avg4, target, nFolds, seedVal, metrics_list)
 ```
+
+> Still slightly worried about overfitting but it seems to be the best we can do for Winter data. Winter demand is difficult to predict with the weather because the weather doesn't drive demand durring the winter.
 

@@ -20,10 +20,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Business Statement
 
-There is a strong correlation between water usage and the weather in the water industry. Water usage increases
+There is a strong correlation between water usage and weather patterns in the water industry. Water usage increases
 during warmer and drier periods, and when it’s colder and wetter, water usage is typically less. Jordan Valley
 Water Conservancy District (JVWCD) has noticed this trend and is wanting to find a solution that will allow
-them to be more proactive instead of reactive with these seasonal trends.
+them to be more proactive and not so reactive to changes in water demand with these seasonal trends.
 
 Historically, operations staff have worked in a reactive state chasing water demands of community members,
 which is influenced by changing weather. Most of this variability happens in the summer, with residential
@@ -45,17 +45,11 @@ so that they can move to a more proactive form of water deliveries.
 # Analytic Objectives
 
 System demand is calculated by adding all the individual sources and subtracting the reservoir trends
-from the total. JVWCD has provided system data to use for modeling. This is time series data and could
+from the total. JVWCD has provided system data to use for modeling. This is time series data and will
 require some cleaning before use in a model.
 
-JVWCD is currently using the online version of Tableau. It would be ideal if we had a model that could
-be used there so as to reduce the amount of training it would take to implement this model. JVWCD pays
-for 30 licenses of Tableau Online.
-
-One aspect of the analytics problem is selecting a weather service to provide weather data. The one that
-stands out to us right now is openweathermap.org and we’d likely get the information we need from the
-free version but are also looking at other options to compare against. The team will look at two additional
-sources of weather data to benchmark against the desired version (openweathermap.org).
+Our analytic objective in this project will be to develop a model that utilizes past weather and water demand
+data to provide water demand predictions for the JVWCD Operations Staff. 
 
 
 # Exploratory Questions
@@ -64,20 +58,21 @@ The questions below were crafted prior to our EDA. We used these questions to he
 
 Is there strong correlations between the different weather metrics and the different point type?
 Do we see a seasonal trend with the data?
-Can the weather help predict demand?
+Can the weather forecast help predict demand?
 How does weather change season by season?
 Is there anything useful with hourly data vs. daily weather data?
 How does demand change from month to month?
 Is there a correlation between demand and temperature, and how strong is that correlation?
 What are the best predictor variables to help predict daily demand?
-Seasonal variation?
+How does the seasonal variation change the hourly water demand?
+
 
 
 # Read Data
 
 ## Packages
 
-```{r}
+```{r echo=T, results='hide', message=F, warning=F}
 list.of.packages <- c("tidyverse",
                       "lubridate",
                       "chron",
@@ -87,7 +82,8 @@ list.of.packages <- c("tidyverse",
                       "scales",
                       "gridExtra",
                       "useful",
-                      "ISOweek")
+                      "ISOweek",
+                      "kableExtra")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 
@@ -101,11 +97,12 @@ library(scales)
 library(gridExtra)
 library(useful)
 library(ISOweek)
+library(kableExtra)
 ```
 
 ## Read CSV files and pre process
 
-```{r}
+```{r echo=T, results='hide', message=F, warning=F}
 #read in data. Change names to be more readable and make hourly demand numeric
 sd <- read.csv("2_year_system_demand.csv")%>%
   rename('hourly_demand' = 'Hourly.Demand..cfs.',
@@ -161,31 +158,38 @@ sp <- cbind(sp,sp2,sp3,sp4)%>%
 #Get rid of temp dfs
 remove(sp2,sp3,sp4)
 ```
-> Something important to note is that the weather data is daily and demand data is hourly so we should ask if they want to change to hourly weather data or as how we want to agregate daily demand so we can match the grain for our model.
 
->Also note below some errors found and questions raised on initial data inspection
+> Something important to note is that the weather data is daily and demand data is hourly so we should ask if they want to change to hourly weather data or as how we want to aggregate daily demand so we can match the grain for our model.
+
+
+## Outlier analysis
 
 ```{r}
-#It appears that there are 3 instances with negative hourly demand.
-#Does this actually mean that water was given back or is this an error?
+#Also note below some errors found and questions raised on initial data inspection.
 sd %>% 
-  filter(hourly_demand<0)
-
-#Is there an entry for each hour of each day of each year?
-sd %>% 
-  group_by(CalendarDay) %>% 
-  summarize(count=n())
-#No there is not. We are missing 2 hours on the 8th and 14th of some year
-sd[sd$time %in% "",]
-#It looks like row 1610 show that we don't have data for 01h00 - 04h00 on 3/8/2020
-#one row is NA, and there is a missing column
-#And the exact same gap on row 10513 03/14/2021
-
-#Is there possibly some planned maintenance going on in early March of each year?
+  filter(hourly_demand<0)%>%
+  kable()
 ```
 
+> It appears that there are 3 instances with negative hourly demand.Does this actually mean that water was given back or is this an error?
 
-## Add a season variable to all tables
+```{r}
+sd %>% 
+  group_by(CalendarDay) %>% 
+  summarize(count=n())%>%
+  kable()
+```
+
+> There is not an entry for each hour of each day of each year. We are missing 2 hours on the 8th and 14th of some year
+
+```{r}
+sd[sd$time %in% "",]%>%
+  kable()
+```
+
+> It looks like row 1610 show that we don't have data for 01h00 - 04h00 on 3/8/2020. One row is NA, and there is a missing column. And the exact same gap on row 10513 03/14/2021. Is there possibly some planned maintenance going on in early March of each year?
+
+## Add a Season Variable to All Tables
 
 ```{r}
 sd <- sd%>%
@@ -210,9 +214,10 @@ wa <- wa%>%
                                 ifelse(CalendarMonth %in% c('9','10','11'), 'Fall',
                                        ifelse(CalendarMonth %in% c('12','1','2'), 'Winter','0')))))%>%
   filter(season != '0')
+#This does filter out any values without a date.
 ```
 
-## System Demand joined to Weather Data from Salt Lake Airport
+## System Demand Joined to Weather Data from Salt Lake Airport
 
 ```{r}
 #Snapshot View
@@ -237,8 +242,13 @@ wd <- wd%>%
 #Get rid of temp dfs
 remove(sd1,sd2,wa1)
 
-summary(wd)
+kable(head(wd))
+```
 
+
+```{r}
+summary(wd)
+glimpse(wd)
 ```
 
 ## Merge Data
@@ -271,6 +281,8 @@ mershrink=mershrink[1:731,]
 merginated = merge(mershrink,merweth,by.x = "ActualDate",
                    by.y = "WeatherDate",all.y = TRUE,
                    all.x = FALSE)
+
+kable(head(merginated))
 ```
 
 ## Add Hour and Min columns
@@ -285,7 +297,11 @@ remove(sd2)
 ```
 
 
-# 2 year system demand
+# Two Year System Demand
+
+```{r}
+kable(head(sd))
+```
 
 ```{r}
 glimpse(sd)
@@ -299,7 +315,7 @@ ggplot(sd,aes(hourly_demand))+
   geom_histogram()+
   theme_minimal()
 ```
-> Demand seems to be heavily skewed towards the lower numbers. I wonder what happens if you change it to months or seasons.
+> For each of these histograms the x axis is the hourly demand value and the y axis is how many times that value occured. Demand seems to be heavily skewed towards the lower numbers.
 
 ## Hourly Demand Histogram by Calendar Month
 
@@ -311,19 +327,18 @@ ggplot(sd,aes(hourly_demand))+
 ```
 
 
-## Hourly Demand Histogram by season
+## Hourly Demand Histogram by Season
 
 ```{r}
 ggplot(sd,aes(hourly_demand))+
   geom_histogram()+
   theme_minimal()+
   facet_wrap(~season)
-
-#What are the x axis values in each of these histograms?
-
 ```
 
-## Hourly Demand Histogram by Calendar year
+> The ditribution of winter hourly demand values seems to be very different than the other seaons. Seems as though more of the hourly demand values are much lower.
+
+## Hourly Demand Histogram by Calendar Year
 
 ```{r}
 ggplot(sd,aes(hourly_demand))+
@@ -332,10 +347,7 @@ ggplot(sd,aes(hourly_demand))+
   facet_wrap(~CalendarYear)
 ```
 
-> The difference between 2020 and 2021 don't seem very notable. 
-> This is super interesting considering 2021 was considered a major drought year. Does look like the demand in 2021 was a bit higher surprisingly.
-
-
+> The difference between 2020 and 2021 hourly demands don't seem very notable. 
 
 ## Average Hourly Demand
 
@@ -348,7 +360,7 @@ sd%>%
   geom_col()+
   theme_minimal()
 ```
-> Demand seems to drop towards the middle of the day. This makes sense as people typically water during the early morning hours
+> Demand seems to drop towards the middle of the day. This makes logical sense as people typically water during the early morning hours.
 
 ## Average Hourly Demand by Season
 
@@ -363,7 +375,21 @@ sd%>%
   facet_wrap(~season)
 ```
 
-> Seems like the Demand is higher in the summer as expected and seems to be higher earlier in the day.
+> Seems like the Demand is higher in the Summer as expected and seems to be higher earlier in the day.
+
+
+## Average Hourly Demand by Month
+
+```{r}
+sd%>%
+  group_by(CalendarMonth,Hour)%>%
+  summarise(mean(hourly_demand))%>%
+  rename(avg_demand = 'mean(hourly_demand)')%>%
+  ggplot(aes(Hour, avg_demand))+
+  geom_col()+
+  theme_minimal()+
+  facet_wrap(~CalendarMonth)
+```
 
 ## Average Season Demand
 
@@ -376,7 +402,7 @@ sd%>%
   geom_col()+
   theme_minimal()
 ```
-> The average demand is way higherin the summer and the next highest is fall.
+> The average demand is much higher in the summer and the next highest is fall.
 
 ## Average Monthly Demand
 
@@ -389,6 +415,7 @@ sd%>%
   geom_col()+
   theme_minimal()
 ```
+
 ## Average Hourly Demand by Year
 
 ```{r}
@@ -401,15 +428,20 @@ sd%>%
   theme_minimal()
 ```
 
-> It looks like 2020 had slightly more water demand.
+> It looks like 2020 had slightly more water demand as a whole. This makes logical sense because of the drought conditions that were present throughout 2021.
 
 
 # System Demand By Point Type
 
 ```{r}
+kable(head(sp))
+```
+
+```{r}
 glimpse(sp)
 summary(sp)
 ```
+
 ## Average Well Flow by Season
 
 ```{r}
@@ -433,6 +465,7 @@ sp%>%
   geom_col()+
   theme_minimal()
 ```
+
 ## Average Transported Flow by Season
 
 ```{r}
@@ -444,6 +477,7 @@ sp%>%
   geom_col()+
   theme_minimal()
 ```
+
 ## Average Treated Flow by Season
 
 ```{r}
@@ -468,7 +502,7 @@ sp%>%
   theme_minimal()
 ```
 
-> Injected flow seems to only happen durring the winter
+> Injected flow seems to only happen during the winter
 
 ## Injected Flow Histogram
 
@@ -492,7 +526,7 @@ sp%>%
   theme_minimal()
 ```
 
-> I did sum on this one becase it had a lot of weird negative and positive and I wanted to see how it corelated
+> I did sum on this one becase it had a lot of weird negative and positive and I wanted to see how it correlated
 
 ## Reservoir Flow Histogram
 
@@ -511,15 +545,20 @@ summary(wa)
 ```
 
 
-## Check for useful predictors
+## Linear Regression to look at useful predictors
+
 ```{r}
 #Clear out redundant columns
 merginated=merginated[,c(1,2,8,9,12,13,14)]
 mermod<-lm(avgdaily_demand~.,data = merginated)
 summary(mermod)
-#Here we can see that Precipitation has a p value of 0.09. logically rain
-#coming same day should not affect as much as recent days (within a week or so)
+```
 
+> Here we can see that Precipitation has a p value of 0.09. logically rain coming same day should not affect as much as recent days (within a week or so).
+
+## Precipitation by Week Number
+
+```{r}
 #Create ISO week number identifier column
 merginated = merginated %>% 
   mutate(weeknum = ISOweek(ActualDate))
@@ -534,7 +573,13 @@ weekref %>%
   theme(axis.text.x = element_text(angle = 90))+
   ggtitle("Precipitation by Week Number")
 #Seems a bit sporadic
+```
 
+## Linear Regression for impact of prevweekfall
+
+prevweekfall is a variable that represents last weeks rainfall.
+
+```{r}
 #shift column so that list shows prior week precipitation
 weekref = shift.column(weekref,columns = "weekfall",len = 1L,up=TRUE)
 weekref = weekref[,c(1,3)]
@@ -551,8 +596,177 @@ summary(merwod)
 #Remove temp data frames
 remove(mergiweek,weekref,merwod,mermod,mersd,merweth,mershrink,merginated)
 ```
->Perhaps we should explore using previous week's precipitation data for prediction.
-Or in some other way reference recent precipitation history instead of same day history
+
+
+
+
+
+
+
+
+
+
+#Attempt at prevday/prev3day
+```{r}
+
+
+#Create
+Mergiday = shift.column(Merged_Data_Prevweek,columns = 'avgdaily_demand',len = 1L,up=TRUE)
+Mergiday = Mergiday %>% 
+  rename(PrevDay = avgdaily_demand.Shifted)
+
+Mergiday = Mergiday %>% 
+  select(-one_of('prevweekfall','weeknum'))
+
+#3 Days
+moving_avg_3_rows <- function(x){
+  (lag(x,3) + lag(x,2) + lag(x,1))/3
+}
+
+IfError <- function(code, silent = FALSE) {
+  tryCatch(code, error = function(c) {
+    if (!silent) {"Error Message"}
+    else{code}})
+}
+
+Mergi3day = Merged_Data_Prevweek %>% 
+  mutate(Prev3Day = ifelse(is.na(moving_avg_3_rows(avgdaily_demand)),avgdaily_demand,
+                           moving_avg_3_rows(avgdaily_demand)))
+Mergi3day = Mergi3day %>% 
+  select(-one_of('prevweekfall','weeknum'))
+
+day<-lm(avgdaily_demand~.,data = Mergiday)
+day3<-lm(avgdaily_demand~.,data = Mergi3day)
+
+summary(day)
+summary(day3)
+
+```
+
+#Split Data
+```{r}
+#3 previous days
+rsq <- function (x, y) cor(x, y) ^ 2
+set.seed(123)
+training_samples <- Mergi3day$avgdaily_demand %>% 
+  createDataPartition(p = 0.7,list = FALSE)
+
+Mergi3train <- Mergi3day[training_samples,]
+Mergi3test <- Mergi3day[-training_samples,]
+
+mod3 <- lm(avgdaily_demand ~., data=Mergi3train)
+
+predictions <- mod3 %>% 
+  predict(Mergi3test)
+
+compare <- data.frame(actual = Mergi3test$avgdaily_demand,
+                      predicted = predictions)
+
+error <- RMSE(predictions,Mergi3test$avgdaily_demand)
+
+
+rsq(compare$actual,compare$predicted)
+
+#1 day = 0.961867
+#2 days = 0.9728684
+#3 days = 0.9758512
+#4 days = 0.973445
+#5 days = 0.9712492
+#6 days = 0.9701669
+
+```
+
+```{r}
+#Control (nothing added)
+control = Merged_Data_Prevweek %>% 
+  select(-one_of('prevweekfall','weeknum'))
+rsq <- function (x, y) cor(x, y) ^ 2
+set.seed(123)
+training_samples <- control$avgdaily_demand %>% 
+  createDataPartition(p = 0.7,list = FALSE)
+
+Mergi3train <- control[training_samples,]
+Mergi3test <- control[-training_samples,]
+
+mod3 <- lm(avgdaily_demand ~., data=control)
+
+predictions <- mod3 %>% 
+  predict(Mergi3test)
+
+compare <- data.frame(actual = Mergi3test$avgdaily_demand,
+                      predicted = predictions)
+
+error <- RMSE(predictions,Mergi3test$avgdaily_demand)
+
+
+rsq(compare$actual,compare$predicted)
+```
+
+
+```{r}
+#PrevDay
+set.seed(123)
+training_samples <- Mergiday$avgdaily_demand %>% 
+  createDataPartition(p = 0.7,list = FALSE)
+
+Mergitrain <- Mergiday[training_samples,]
+Mergitest <- Mergiday[-training_samples,]
+
+modprev <- lm(avgdaily_demand ~., data=Mergiday)
+
+predictions <- modprev %>% 
+  predict(Mergitest)
+
+compare <- data.frame(actual = Mergitest$avgdaily_demand,
+                      predicted = predictions)
+
+error <- RMSE(predictions,Mergitest$avgdaily_demand)
+
+
+rsq(compare$actual,compare$predicted)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+> Perhaps we should explore using previous week's precipitation data for prediction as it seems to have a higher p value. Or in some other way reference recent precipitation history instead of same day history
+
 
 ## Average Demand by TemperatureMean
 
@@ -562,7 +776,7 @@ wd%>%
   summarise(mean(daily_demand))%>%
   rename(avg_demand = 'mean(daily_demand)')%>%
   ggplot(aes(TemperatureMean, avg_demand))+
-  geom_line()+
+  geom_col()+
   theme_minimal()
 ```
 
@@ -587,7 +801,8 @@ wd%>%
   mutate(count_of_days = 1)%>%
   summarise(count_of_days = sum(count_of_days),
             mean(daily_demand))%>%
-  rename(avg_demand = 'mean(daily_demand)')
+  rename(avg_demand = 'mean(daily_demand)')%>%
+  kable()
 ```
 
 ## Average Demand on Snow days vs non Snow days
@@ -599,12 +814,13 @@ wd%>%
   mutate(count_of_days = 1)%>%
   summarise(count_of_days = sum(count_of_days),
             mean(daily_demand))%>%
-  rename(avg_demand = 'mean(daily_demand)')
+  rename(avg_demand = 'mean(daily_demand)')%>%
+  kable()
 ```
 
 # Numeric Variable Examination 
 
-## Relation to Daily Demand
+## Correlation to Daily Demand
 
 ```{r}
 wdn <- wd%>%
@@ -615,14 +831,13 @@ cwdn <- cor(wdn, use="pairwise.complete.obs")
 cwdn1 <- data.frame(sort(cwdn[,'daily_demand'], decreasing = TRUE))
 
 cwdn1%>%
-  rename(Correlation = "sort.cwdn....daily_demand....decreasing...TRUE.")
+  rename(Correlation = "sort.cwdn....daily_demand....decreasing...TRUE.")%>%
+  kable()
 ```
 
+## Correlation Plot
+
 ```{r}
-
-
-#Correlation Plot
-
 #Calculate correlation
 dfcor <- cor(wdn[,unlist(lapply(df, is.numeric))])
 
@@ -636,21 +851,15 @@ df_numericVars <- which(sapply(wdn, is.numeric))
 df_numVar <- wdn[, df_numericVars]
 df_cor_numVar <- cor(df_numVar, use="pairwise.complete.obs") 
 
-
-
 # Correlation of numeric variables with their numbers and shap/color relation to sale price
 corrplot.mixed(df_cor_numVar, tl.col="black", tl.pos = "lt", tl.cex = 0.7,cl.cex = .7, number.cex=.7)
-
-corrplot(df_cor_numVar, tl.col="black", tl.pos = "lt", tl.cex = 0.7,cl.cex = .7, number.cex=.7, method = "number")
 ```
 
+## Correlation Plot 2
 
-
-
-
-
-
-
+```{r}
+corrplot(df_cor_numVar, tl.col="black", tl.pos = "lt", tl.cex = 0.7,cl.cex = .7, number.cex=.7, method = "number")
+```
 
 
 ## Correlation of logged mean temprature with logged daily demand
@@ -690,31 +899,43 @@ ggplot(wdn, aes(log(CoolingDegreeDays),log(daily_demand)))+
 
 # Results and Conclusions
 
-During this EDA we discovered that are initial assumption holds true. Temperature plays an important role in water usage. There is more demand on hotter days and seasons when there isn't precipitation. We can see that there are correlations between daily demand and Temperature Mean, Min, and Max, CoolingDegreeDays, SnowDepth, Precipitation, and Snowfall. The weather data available currently only tracks metrics on a daily basis. The data received from JVWCD tracks demand minute by minute.We then merged and aggregated the data to fit our needs. We ran a linear regression where we discovered that the previous week precipitation is significant along with temperature and therefore seasons.Additionally, we see how the different point types are affected by the weather data as well and there overall distribution. Our initial goal is to successfully predict daily demand and then see how that compares with the necessary point types. 
-
-
-
+During this EDA we discovered that our initial assumption holds true. Temperature plays an important role in water usage. There is more demand on hotter days and seasons when there isn't precipitation. We can see that there are correlations between daily demand and Temperature Mean, Min, and Max, CoolingDegreeDays, SnowDepth, Precipitation, and Snowfall. The weather data available currently only tracks metrics on a daily basis. The data received from JVWCD tracks demand minute by minute. We then merged and aggregated the data to fit our needs. We ran a linear regression where we discovered that the previous week precipitation is significant along with temperature and therefore seasons.Additionally, we see how the different point types are affected by the weather data as well and there overall distribution. Our initial goal is to successfully predict daily demand and then see how that compares with the necessary point types. 
 
 
 # Questions for Jordan Valley
-Difference in weather and water granularity?
-What do we do with NULLs?
-What do we do with negative hourly demand values?
-Missing hourly entries?
-If a lot of this data makes logical sense (meaning we can generally predict demand based on past data and an upcoming weather forecast), what additional value is Jordan Valley looking for in a prediction model?
+
++ What should we do with the difference in weather and water granularity? Is hourly weather data available, or are we going to change our forecast granularity to daily to match with the weather?
++ What do we do with NULLs?
++ What do we do with negative hourly demand values?
++ What do we do with missing hourly entries?
++ If a lot of this data makes logical sense (meaning we can generally predict demand based on past data and an upcoming weather forecast), what additional value is Jordan Valley looking for in a prediction model?
+
+# Questions for ourselves
+
++ How will we incorporate what we learned into Tableau?
++ How can we get this data into Tableau and can we accomplish the same merges and feature engineering we did above Tableau dashboard/forecast?
 
 
 # Member Contributions
 
-Jake: 
+**Jake:**
+
 Added correlations plots
 Formatted final report
 Added business problem, and analytical objective
 
-Nate:
+**Nate:**
+
 Included highlights of N/A and negative values to discuss
 Included merged data frame showing previous week's precipitation to check for prediction power of recent rainfall
 
-Zach:
+**Zach:**
 
-Jackson:
+Formatted time data to match between all three tables. Added season variable. Created a bunch of plots looking at averages compared to seasons and other variables such as temperature. Joined System data to Weather data to look at correlations. Looked at correlation of numerical variables to target variable. Tried logging to see what that did to correlations. Added some markdown formatting.
+
+
+**Jackson:**
+
+Coordinated EDA meetings between team members and University staff
+Code and Write Up Review
+
