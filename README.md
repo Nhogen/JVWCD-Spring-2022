@@ -1,6 +1,8 @@
 # JVWCD Spring 2022
 
-This repo is a Capstone project for the MSBA program at the University of Utah. This project was completed for Jordan Valley Water Conservancy District. 
+This repo is a Capstone project for the MSBA program at the University of Utah. This project was completed for Jordan Valley Water Conservancy District.
+
+The easiest way to access the code is to open JVWCD-Spring-2022.Rproj in R studio. This will open an R Project that will have all of the files avaiable to open from R-Studio.
 
 # Models
 
