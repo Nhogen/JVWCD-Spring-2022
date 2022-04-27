@@ -96,11 +96,17 @@ sd <- read.csv("new_daily_demand.csv")%>%
          'min_demand_af' = 'Min.Daily.Demand..af.',
          'min_demand_mgd' = 'Min.Daily.Demand..mgd.')%>%#Clifton said this is a min
   mutate(date = as.Date(ReadDate,format="%m/%d/%Y"))
+```
 
+## Merge Data
 
+```{r}
 wd <- merge(wa,sd,by="date")
+```
 
+## Isolate Target Variable
 
+```{r}
 mgd_avg <- wd%>%
   select(-avg_demand_cfs,
          -avg_demand_af,
@@ -112,8 +118,11 @@ mgd_avg <- wd%>%
          -min_demand_af,
          -min_demand_mgd)%>%
   select(-WeatherDate,-ReadDate)
+```
 
+## Add Rain Week
 
+```{r}
 rainwk <- mgd_avg%>%
   mutate(Week_no = format(date, "%U"))%>%
   group_by(Week_no)%>%
@@ -127,8 +136,11 @@ mgd_avg <- mgd_avg %>%
 mgd_avg <- dplyr::left_join(mgd_avg,rainwk,by="Week_no")
 
 mgd_avg <- mgd_avg%>% select(-Week_no)
+```
 
-# Rollmean 9 Day Average Calculations
+## Rollmean 9 Day Average Calculations
+
+```{r}
 Avg4 <- mgd_avg %>% 
   mutate(TempMean4Day = rollmean(TemperatureMean, k = 9, fill = mean(TemperatureMean)),
          Precip4Day = rollmean(Precipitation, k = 9, fill = mean(Precipitation)),
